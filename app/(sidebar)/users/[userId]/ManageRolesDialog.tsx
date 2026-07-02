@@ -75,24 +75,25 @@ export function ManageRolesDialog({
         e.preventDefault()
         setIsLoading(true)
 
-        const response = await fetch(
-            `${BASE_URL}/api/user-role/user/${user.id}`,
-            {
-                method: "PUT",
-                body: JSON.stringify({
-                    role_ref_names: selectedValues,
-                }),
-                headers: { "Content-Type": "application/json" },
-            }
-        )
-
         try {
+            const response = await fetch(
+                `${BASE_URL}/api/user-role/user/${user.id}`,
+                {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        role_ref_names: selectedValues,
+                    }),
+                    headers: { "Content-Type": "application/json" },
+                }
+            )
+
             if (response.ok) {
                 toast.success("User's roles have been updated")
                 setTimeout(() => router.refresh(), 1000)
             } else {
-                const error = await response.text()
-                toast.warning(error || "Failed to update user's roles")
+                const error = await response.json()
+                console.warn(error.message || "Failed to update user's roles")
+                toast.warning(error.message || "Failed to update user's roles")
             }
         } catch (error) {
             console.warn(error)

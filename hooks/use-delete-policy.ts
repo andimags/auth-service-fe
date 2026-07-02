@@ -38,8 +38,8 @@ export function useDeletePolicy({ onSuccess }: UseDeletePolicyOptions = {}) {
                             })
                             onSuccess?.()
                         } else {
-                            const error = await response.text()
-                            toast.warning(error || "Failed to delete policy")
+                            const error = await response.json()
+                            toast.warning(error.message || "Failed to delete policy")
                         }
                     } catch (error) {
                         console.warn(error)

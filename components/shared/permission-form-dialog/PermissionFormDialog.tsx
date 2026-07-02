@@ -117,19 +117,25 @@ export function PermissionFormDialog() {
             access_level: payload.access_level,
         }
 
-        const response = await fetch(`${BASE_URL}/api/permissions`, {
-            method: "POST",
-            body: JSON.stringify(payloadBody),
-            headers: { "Content-Type": "application/json" },
-        })
+        try {
+            const response = await fetch(`${BASE_URL}/api/permissions`, {
+                method: "POST",
+                body: JSON.stringify(payloadBody),
+                headers: { "Content-Type": "application/json" },
+            })
 
-        if (response.ok) {
-            handleClose()
-            toast.success("Permission has been created")
-            queryClient.invalidateQueries({ queryKey: ["permissions"] })
-        } else {
-            const error = await response.text()
-            toast.warning(error || "Failed to create permission")
+            if (response.ok) {
+                handleClose()
+                toast.success("Permission has been created")
+                queryClient.invalidateQueries({ queryKey: ["permissions"] })
+            } else {
+                const error = await response.json()
+                console.warn(error.message || "Failed to create permission")
+                toast.warning(error.message || "Failed to create permission")
+            }
+        } catch (error) {
+            console.warn(error)
+            toast.error("Network error. Please try again.")
         }
     }
 
@@ -143,23 +149,29 @@ export function PermissionFormDialog() {
             access_level: payload.access_level,
         }
 
-        const response = await fetch(
-            `${BASE_URL}/api/permissions/${permission?.id}`,
-            {
-                method: "PUT",
-                body: JSON.stringify(payloadBody),
-                headers: { "Content-Type": "application/json" },
-            }
-        )
+        try {
+            const response = await fetch(
+                `${BASE_URL}/api/permissions/${permission?.id}`,
+                {
+                    method: "PUT",
+                    body: JSON.stringify(payloadBody),
+                    headers: { "Content-Type": "application/json" },
+                }
+            )
 
-        if (response.ok) {
-            handleClose()
-            toast.success("Permission has been updated")
-            queryClient.invalidateQueries({ queryKey: ["permissions"] })
-            onUpdateSuccess?.()
-        } else {
-            const error = await response.text()
-            toast.warning(error || "Failed to update permission")
+            if (response.ok) {
+                handleClose()
+                toast.success("Permission has been updated")
+                queryClient.invalidateQueries({ queryKey: ["permissions"] })
+                onUpdateSuccess?.()
+            } else {
+                const error = await response.json()
+                console.warn(error.message || "Failed to update permission")
+                toast.warning(error.message || "Failed to update permission")
+            }
+        } catch (error) {
+            console.warn(error)
+            toast.error("Network error. Please try again.")
         }
     }
 

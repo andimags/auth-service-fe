@@ -38,8 +38,8 @@ export function useDeleteRole({ onSuccess }: UseDeleteRoleOptions = {}) {
                             })
                             onSuccess?.()
                         } else {
-                            const error = await response.text()
-                            toast.warning(error || "Failed to delete role")
+                            const error = await response.json()
+                            toast.warning(error.message || "Failed to delete role")
                         }
                     } catch (error) {
                         console.warn(error)

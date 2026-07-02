@@ -40,9 +40,9 @@ export function useDeletePermission({
                             })
                             onSuccess?.()
                         } else {
-                            const error = await response.text()
+                            const error = await response.json()
                             toast.warning(
-                                error || "Failed to delete permission"
+                                error.message || "Failed to delete permission"
                             )
                         }
                     } catch (error) {

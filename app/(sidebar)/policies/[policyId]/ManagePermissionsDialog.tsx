@@ -80,13 +80,12 @@ export function ManagePermissionsDialog({
                 toast.success("Policy permissions have been updated")
                 setTimeout(() => router.refresh(), 1000)
             } else {
-                const error = await response.text()
-                toast.warning(error || "Failed to update policy permissions")
-            }
-        } catch (error) {
-            console.warn(error)
-            toast.error("Network error. Please try again.")
-        } finally {
+                const error = await response.json()
+                console.warn(error.message || "Failed to update policy's permissions")
+                toast.warning(error.message || "Failed to update policy's permissions")
+            } 
+        }
+        finally {
             setIsLoading(false)
         }
     }

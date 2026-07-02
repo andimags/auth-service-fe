@@ -42,8 +42,8 @@ export function useDeleteUser({ onSuccess }: UseDeleteUserOptions = {}) {
                             })
                             onSuccess?.()
                         } else {
-                            const error = await response.text()
-                            toast.warning(error || "Failed to delete user")
+                            const error = await response.json()
+                            toast.warning(error.message || "Failed to delete user")
                         }
                     } catch (error) {
                         console.warn(error)

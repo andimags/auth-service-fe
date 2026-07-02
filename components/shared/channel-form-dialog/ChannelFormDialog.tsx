@@ -113,40 +113,52 @@ export function ChannelFormDialog() {
     }
 
     const createChannel = async () => {
-        const response = await fetch(`${BASE_URL}/api/channels`, {
-            method: "POST",
-            body: JSON.stringify(payload),
-            headers: { "Content-Type": "application/json" },
-        })
+        try {
+            const response = await fetch(`${BASE_URL}/api/channels`, {
+                method: "POST",
+                body: JSON.stringify(payload),
+                headers: { "Content-Type": "application/json" },
+            })
 
-        if (response.ok) {
-            handleClose()
-            toast.success("Channel has been created")
-            queryClient.invalidateQueries({ queryKey: ["channels"] })
-        } else {
-            const error = await response.text()
-            toast.warning(error || "Failed to create channel")
+            if (response.ok) {
+                handleClose()
+                toast.success("Channel has been created")
+                queryClient.invalidateQueries({ queryKey: ["channels"] })
+            } else {
+                const error = await response.json()
+                console.warn(error.message || "Failed to create channel")
+                toast.warning(error.message || "Failed to create channel")
+            }
+        } catch (error) {
+            console.warn(error)
+            toast.error("Network error. Please try again.")
         }
     }
 
     const updateChannel = async () => {
-        const response = await fetch(
-            `${BASE_URL}/api/channels/${channel?.id}`,
-            {
-                method: "PUT",
-                body: JSON.stringify(payload),
-                headers: { "Content-Type": "application/json" },
-            }
-        )
+        try {
+            const response = await fetch(
+                `${BASE_URL}/api/channels/${channel?.id}`,
+                {
+                    method: "PUT",
+                    body: JSON.stringify(payload),
+                    headers: { "Content-Type": "application/json" },
+                }
+            )
 
-        if (response.ok) {
-            handleClose()
-            toast.success("Channel has been updated")
-            queryClient.invalidateQueries({ queryKey: ["channels"] })
-            onUpdateSuccess?.()
-        } else {
-            const error = await response.text()
-            toast.warning(error || "Failed to update channel")
+            if (response.ok) {
+                handleClose()
+                toast.success("Channel has been updated")
+                queryClient.invalidateQueries({ queryKey: ["channels"] })
+                onUpdateSuccess?.()
+            } else {
+                const error = await response.json()
+                console.warn(error.message || "Failed to update channel")
+                toast.warning(error.message || "Failed to update channel")
+            }
+        } catch (error) {
+            console.warn(error)
+            toast.error("Network error. Please try again.")
         }
     }
 

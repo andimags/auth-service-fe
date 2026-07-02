@@ -115,19 +115,25 @@ export function RoleFormDialog() {
                 : null,
         }
 
-        const response = await fetch(`${BASE_URL}/api/roles`, {
-            method: "POST",
-            body: JSON.stringify(payloadBody),
-            headers: { "Content-Type": "application/json" },
-        })
+        try {
+            const response = await fetch(`${BASE_URL}/api/roles`, {
+                method: "POST",
+                body: JSON.stringify(payloadBody),
+                headers: { "Content-Type": "application/json" },
+            })
 
-        if (response.ok) {
-            handleClose()
-            toast.success("Role has been created")
-            queryClient.invalidateQueries({ queryKey: ["roles"] })
-        } else {
-            const error = await response.text()
-            toast.warning(error || "Failed to create role")
+            if (response.ok) {
+                handleClose()
+                toast.success("Role has been created")
+                queryClient.invalidateQueries({ queryKey: ["roles"] })
+            } else {
+                const error = await response.json()
+                console.warn(error.message || "Failed to create role")
+                toast.warning(error.message || "Failed to create role")
+            }
+        } catch (error) {
+            console.warn(error)
+            toast.error("Network error. Please try again.")
         }
     }
 
@@ -142,20 +148,26 @@ export function RoleFormDialog() {
                 : null,
         }
 
-        const response = await fetch(`${BASE_URL}/api/roles/${role?.id}`, {
-            method: "PUT",
-            body: JSON.stringify(payloadBody),
-            headers: { "Content-Type": "application/json" },
-        })
+        try {
+            const response = await fetch(`${BASE_URL}/api/roles/${role?.id}`, {
+                method: "PUT",
+                body: JSON.stringify(payloadBody),
+                headers: { "Content-Type": "application/json" },
+            })
 
-        if (response.ok) {
-            handleClose()
-            toast.success("Role has been updated")
-            queryClient.invalidateQueries({ queryKey: ["roles"] })
-            onUpdateSuccess?.()
-        } else {
-            const error = await response.text()
-            toast.warning(error || "Failed to update role")
+            if (response.ok) {
+                handleClose()
+                toast.success("Role has been updated")
+                queryClient.invalidateQueries({ queryKey: ["roles"] })
+                onUpdateSuccess?.()
+            } else {
+                const error = await response.json()
+                console.warn(error.message || "Failed to update role")
+                toast.warning(error.message || "Failed to update role")
+            }
+        } catch (error) {
+            console.warn(error)
+            toast.error("Network error. Please try again.")
         }
     }
 

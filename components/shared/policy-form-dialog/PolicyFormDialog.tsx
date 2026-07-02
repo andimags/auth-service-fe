@@ -93,19 +93,25 @@ export function PolicyFormDialog() {
             ref_name: payload.ref_name,
         }
 
-        const response = await fetch(`${BASE_URL}/api/policies`, {
-            method: "POST",
-            body: JSON.stringify(payloadBody),
-            headers: { "Content-Type": "application/json" },
-        })
+        try {
+            const response = await fetch(`${BASE_URL}/api/policies`, {
+                method: "POST",
+                body: JSON.stringify(payloadBody),
+                headers: { "Content-Type": "application/json" },
+            })
 
-        if (response.ok) {
-            handleClose()
-            toast.success("Policy has been created")
-            queryClient.invalidateQueries({ queryKey: ["policies"] })
-        } else {
-            const error = await response.text()
-            toast.warning(error || "Failed to create policy")
+            if (response.ok) {
+                handleClose()
+                toast.success("Policy has been created")
+                queryClient.invalidateQueries({ queryKey: ["policies"] })
+            } else {
+                const error = await response.json()
+                console.warn(error.message || "Failed to create policy")
+                toast.warning(error.message || "Failed to create policy")
+            }
+        } catch (error) {
+            console.warn(error)
+            toast.error("Network error. Please try again.")
         }
     }
 
@@ -116,20 +122,26 @@ export function PolicyFormDialog() {
             ref_name: payload.ref_name,
         }
 
-        const response = await fetch(`${BASE_URL}/api/policies/${policy?.id}`, {
-            method: "PUT",
-            body: JSON.stringify(payloadBody),
-            headers: { "Content-Type": "application/json" },
-        })
+        try {
+            const response = await fetch(`${BASE_URL}/api/policies/${policy?.id}`, {
+                method: "PUT",
+                body: JSON.stringify(payloadBody),
+                headers: { "Content-Type": "application/json" },
+            })
 
-        if (response.ok) {
-            handleClose()
-            toast.success("Policy has been updated")
-            queryClient.invalidateQueries({ queryKey: ["policies"] })
-            onUpdateSuccess?.()
-        } else {
-            const error = await response.text()
-            toast.warning(error || "Failed to update policy")
+            if (response.ok) {
+                handleClose()
+                toast.success("Policy has been updated")
+                queryClient.invalidateQueries({ queryKey: ["policies"] })
+                onUpdateSuccess?.()
+            } else {
+                const error = await response.json()
+                console.warn(error.message || "Failed to update policy")
+                toast.warning(error.message || "Failed to update policy")
+            }
+        } catch (error) {
+            console.warn(error)
+            toast.error("Network error. Please try again.")
         }
     }
 

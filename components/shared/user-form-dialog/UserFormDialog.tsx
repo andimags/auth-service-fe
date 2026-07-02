@@ -136,19 +136,25 @@ export function UserFormDialog() {
     }
 
     const createUser = async () => {
-        const response = await fetch(`${BASE_URL}/api/users`, {
-            method: "POST",
-            body: JSON.stringify(payload),
-            headers: { "Content-Type": "application/json" },
-        })
+        try {
+            const response = await fetch(`${BASE_URL}/api/users`, {
+                method: "POST",
+                body: JSON.stringify(payload),
+                headers: { "Content-Type": "application/json" },
+            })
 
-        if (response.ok) {
-            handleClose()
-            toast.success("User has been created")
-            queryClient.invalidateQueries({ queryKey: ["users"] })
-        } else {
-            const error = await response.text()
-            toast.warning(error || "Failed to create user")
+            if (response.ok) {
+                handleClose()
+                toast.success("User has been created")
+                queryClient.invalidateQueries({ queryKey: ["users"] })
+            } else {
+                const error = await response.json()
+                console.warn(error.message || "Failed to create user")
+                toast.warning(error.message || "Failed to create user")
+            }
+        } catch (error) {
+            console.warn(error)
+            toast.error("Network error. Please try again.")
         }
     }
 
@@ -156,20 +162,26 @@ export function UserFormDialog() {
         // Exclude password from update payloads.
         const { password: _password, ...updatePayload } = payload
 
-        const response = await fetch(`${BASE_URL}/api/users/${user?.id}`, {
-            method: "PUT",
-            body: JSON.stringify(updatePayload),
-            headers: { "Content-Type": "application/json" },
-        })
+        try {
+            const response = await fetch(`${BASE_URL}/api/users/${user?.id}`, {
+                method: "PUT",
+                body: JSON.stringify(updatePayload),
+                headers: { "Content-Type": "application/json" },
+            })
 
-        if (response.ok) {
-            handleClose()
-            toast.success("User has been updated")
-            queryClient.invalidateQueries({ queryKey: ["users"] })
-            onUpdateSuccess?.()
-        } else {
-            const error = await response.text()
-            toast.warning(error || "Failed to update user")
+            if (response.ok) {
+                handleClose()
+                toast.success("User has been updated")
+                queryClient.invalidateQueries({ queryKey: ["users"] })
+                onUpdateSuccess?.()
+            } else {
+                const error = await response.json()
+                console.warn(error.message || "Failed to update user")
+                toast.warning(error.message || "Failed to update user")
+            }
+        } catch (error) {
+            console.warn(error)
+            toast.error("Network error. Please try again.")
         }
     }
 

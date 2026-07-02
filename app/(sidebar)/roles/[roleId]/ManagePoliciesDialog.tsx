@@ -19,7 +19,6 @@ import { Field, FieldGroup } from "@/components/ui/field"
 import { Label } from "@/components/ui/label"
 import { RoleDto } from "@/dtos/RoleDto"
 import { getBaseUrl } from "@/lib/api"
-import { ApiError } from "@/lib/api-error"
 import { useRouter } from "next/navigation"
 import { type SyntheticEvent, useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -70,27 +69,18 @@ export function ManagePoliciesDialog({
                 }
             )
 
-            const data = await response.json().catch(() => ({}))
-
             if (response.ok) {
                 toast.success("Role policies have been updated")
                 handleClose()
                 setTimeout(() => router.refresh(), 1000)
-            }
-            else{
-                throw new ApiError(
-                    data.message ?? "Something went wrong",
-                    response.status,
-                    data.details
-                )
+            } else {
+                const error = await response.json()
+                console.warn(error.message || "Failed to update role policies")
+                toast.warning(error.message || "Failed to update role policies")
             }
         } catch (error) {
-            if (error instanceof ApiError) {
-                toast.error(error.message)
-            } else {
-                console.warn("Unexpected error:", error)
-                toast.error("Something went wrong")
-            }
+            console.warn(error)
+            toast.error("Network error. Please try again.")
         } finally {
             setIsLoading(false)
         }
