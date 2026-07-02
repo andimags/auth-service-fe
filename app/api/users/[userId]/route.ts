@@ -1,5 +1,6 @@
 import { UpdateUserDto } from "@/dtos/UserDto"
 import { getBaseUrl } from "@/lib/api"
+import { ApiError } from "@/lib/api-error"
 import { authOptions } from "@/lib/next-auth"
 import { DeleteUser, updateUser } from "@/services/user.service"
 import { getServerSession } from "next-auth/next"
@@ -45,7 +46,16 @@ export async function GET(
         const user = await res.json()
 
         return NextResponse.json(user)
-    } catch {
+    } catch (error) {
+        if (error instanceof ApiError) {
+            return NextResponse.json(
+                {
+                    message: error.message,
+                    ...(error.details !== undefined && { details: error.details }),
+                },
+                { status: error.statusCode }
+            )
+        }
         return NextResponse.json(
             { message: "Internal Server Error" },
             { status: 500 }
@@ -81,7 +91,15 @@ export async function PUT(
 
         return NextResponse.json(response)
     } catch (error) {
-        console.log(error)
+        if (error instanceof ApiError) {
+            return NextResponse.json(
+                {
+                    message: error.message,
+                    ...(error.details !== undefined && { details: error.details }),
+                },
+                { status: error.statusCode }
+            )
+        }
 
         return NextResponse.json(
             { message: "Internal Server Error" },
@@ -115,7 +133,15 @@ export async function DELETE(
 
         return NextResponse.json(response)
     } catch (error) {
-        console.log(error)
+        if (error instanceof ApiError) {
+            return NextResponse.json(
+                {
+                    message: error.message,
+                    ...(error.details !== undefined && { details: error.details }),
+                },
+                { status: error.statusCode }
+            )
+        }
 
         return NextResponse.json(
             { message: "Internal Server Error" },

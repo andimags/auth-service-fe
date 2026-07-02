@@ -1,4 +1,5 @@
 import { UpdatePermissionDto } from "@/dtos/PermissionDto"
+import { ApiError } from "@/lib/api-error"
 import { authOptions } from "@/lib/next-auth"
 import {
     deletePermission,
@@ -33,7 +34,15 @@ export async function GET(
 
         return NextResponse.json(response)
     } catch (error) {
-        console.log(error)
+        if (error instanceof ApiError) {
+            return NextResponse.json(
+                {
+                    message: error.message,
+                    ...(error.details !== undefined && { details: error.details }),
+                },
+                { status: error.statusCode }
+            )
+        }
         return NextResponse.json(
             { message: "Internal Server Error" },
             { status: 500 }
@@ -70,7 +79,15 @@ export async function PUT(
 
         return NextResponse.json(response)
     } catch (error) {
-        console.log(error)
+        if (error instanceof ApiError) {
+            return NextResponse.json(
+                {
+                    message: error.message,
+                    ...(error.details !== undefined && { details: error.details }),
+                },
+                { status: error.statusCode }
+            )
+        }
         return NextResponse.json(
             { message: "Internal Server Error" },
             { status: 500 }
@@ -104,7 +121,15 @@ export async function DELETE(
 
         return NextResponse.json(response)
     } catch (error) {
-        console.log(error)
+        if (error instanceof ApiError) {
+            return NextResponse.json(
+                {
+                    message: error.message,
+                    ...(error.details !== undefined && { details: error.details }),
+                },
+                { status: error.statusCode }
+            )
+        }
         return NextResponse.json(
             { message: "Internal Server Error" },
             { status: 500 }

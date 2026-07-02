@@ -1,8 +1,9 @@
+import { ReplaceUserRolesDto } from "@/dtos/UserRoleDto"
+import { ApiError } from "@/lib/api-error"
 import { authOptions } from "@/lib/next-auth"
+import { replaceUserRoles } from "@/services/user-role.service"
 import { getServerSession } from "next-auth/next"
 import { NextResponse } from "next/server"
-import { ReplaceUserRolesDto } from "@/dtos/UserRoleDto"
-import { replaceUserRoles } from "@/services/user-role.service"
 
 export async function PUT(
     request: Request,
@@ -32,7 +33,15 @@ export async function PUT(
 
         return NextResponse.json(response)
     } catch (error) {
-        console.log(error)
+        if (error instanceof ApiError) {
+            return NextResponse.json(
+                {
+                    message: error.message,
+                    ...(error.details !== undefined && { details: error.details }),
+                },
+                { status: error.statusCode }
+            )
+        }
 
         return NextResponse.json(
             { message: "Internal Server Error" },

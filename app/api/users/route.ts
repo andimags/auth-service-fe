@@ -1,4 +1,5 @@
 import { CreateUserDto } from "@/dtos"
+import { ApiError } from "@/lib/api-error"
 import { authOptions } from "@/lib/next-auth"
 import { addUser, getUsers } from "@/services/user.service"
 import { getServerSession } from "next-auth/next"
@@ -27,7 +28,15 @@ export async function GET(request: Request) {
 
         return NextResponse.json(response)
     } catch (error) {
-        console.log(error)
+        if (error instanceof ApiError) {
+            return NextResponse.json(
+                {
+                    message: error.message,
+                    ...(error.details !== undefined && { details: error.details }),
+                },
+                { status: error.statusCode }
+            )
+        }
         return NextResponse.json(
             { message: "Internal Server Error" },
             { status: 500 }
@@ -58,7 +67,15 @@ export async function POST(request: Request) {
 
         return NextResponse.json(response)
     } catch (error) {
-        console.log(error)
+        if (error instanceof ApiError) {
+            return NextResponse.json(
+                {
+                    message: error.message,
+                    ...(error.details !== undefined && { details: error.details }),
+                },
+                { status: error.statusCode }
+            )
+        }
 
         return NextResponse.json(
             { message: "Internal Server Error" },
