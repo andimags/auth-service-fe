@@ -26,6 +26,13 @@ import {
     CommandList,
     CommandSeparator,
 } from "@/components/ui/command"
+import { useAriaAnnouncer } from "./multi-select-announcer"
+import {
+    getResponsiveSettings,
+    getWidthConstraints,
+    useScreenSize,
+    type ResponsiveConfig,
+} from "./multi-select-responsive"
 
 /**
  * Animation types and configurations
@@ -219,28 +226,7 @@ interface MultiSelectProps
      * Allows customizing maxCount and other properties based on viewport.
      * Can be boolean true for default responsive behavior or an object for custom configuration.
      */
-    responsive?:
-        | boolean
-        | {
-              /** Configuration for mobile devices (< 640px) */
-              mobile?: {
-                  maxCount?: number
-                  hideIcons?: boolean
-                  compactMode?: boolean
-              }
-              /** Configuration for tablet devices (640px - 1024px) */
-              tablet?: {
-                  maxCount?: number
-                  hideIcons?: boolean
-                  compactMode?: boolean
-              }
-              /** Configuration for desktop devices (> 1024px) */
-              desktop?: {
-                  maxCount?: number
-                  hideIcons?: boolean
-                  compactMode?: boolean
-              }
-          }
+    responsive?: ResponsiveConfig
 
     /**
      * Minimum width for the component.
@@ -340,24 +326,11 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
         const [isAnimating, setIsAnimating] = React.useState(false)
         const [searchValue, setSearchValue] = React.useState("")
 
-        const [politeMessage, setPoliteMessage] = React.useState("")
-        const [assertiveMessage, setAssertiveMessage] = React.useState("")
         const prevSelectedCount = React.useRef(selectedValues.length)
         const prevIsOpen = React.useRef(isPopoverOpen)
         const prevSearchValue = React.useRef(searchValue)
 
-        const announce = React.useCallback(
-            (message: string, priority: "polite" | "assertive" = "polite") => {
-                if (priority === "assertive") {
-                    setAssertiveMessage(message)
-                    setTimeout(() => setAssertiveMessage(""), 100)
-                } else {
-                    setPoliteMessage(message)
-                    setTimeout(() => setPoliteMessage(""), 100)
-                }
-            },
-            []
-        )
+        const { announce, liveRegion } = useAriaAnnouncer()
 
         const multiSelectId = React.useId()
         const listboxId = `${multiSelectId}-listbox`
@@ -430,73 +403,13 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
             [resetToDefault, selectedValues, onValueChange]
         )
 
-        const [screenSize, setScreenSize] = React.useState<
-            "mobile" | "tablet" | "desktop"
-        >("desktop")
+        const screenSize = useScreenSize()
 
-        React.useEffect(() => {
-            if (typeof window === "undefined") return
-            const handleResize = () => {
-                const width = window.innerWidth
-                if (width < 640) {
-                    setScreenSize("mobile")
-                } else if (width < 1024) {
-                    setScreenSize("tablet")
-                } else {
-                    setScreenSize("desktop")
-                }
-            }
-            handleResize()
-            window.addEventListener("resize", handleResize)
-            return () => {
-                if (typeof window !== "undefined") {
-                    window.removeEventListener("resize", handleResize)
-                }
-            }
-        }, [])
-
-        const getResponsiveSettings = () => {
-            if (!responsive) {
-                return {
-                    maxCount: maxCount,
-                    hideIcons: false,
-                    compactMode: false,
-                }
-            }
-            if (responsive === true) {
-                const defaultResponsive = {
-                    mobile: {
-                        maxCount: 2,
-                        hideIcons: false,
-                        compactMode: true,
-                    },
-                    tablet: {
-                        maxCount: 4,
-                        hideIcons: false,
-                        compactMode: false,
-                    },
-                    desktop: {
-                        maxCount: 6,
-                        hideIcons: false,
-                        compactMode: false,
-                    },
-                }
-                const currentSettings = defaultResponsive[screenSize]
-                return {
-                    maxCount: currentSettings?.maxCount ?? maxCount,
-                    hideIcons: currentSettings?.hideIcons ?? false,
-                    compactMode: currentSettings?.compactMode ?? false,
-                }
-            }
-            const currentSettings = responsive[screenSize]
-            return {
-                maxCount: currentSettings?.maxCount ?? maxCount,
-                hideIcons: currentSettings?.hideIcons ?? false,
-                compactMode: currentSettings?.compactMode ?? false,
-            }
-        }
-
-        const responsiveSettings = getResponsiveSettings()
+        const responsiveSettings = getResponsiveSettings(
+            responsive,
+            screenSize,
+            maxCount
+        )
 
         const getBadgeAnimationClass = () => {
             if (animationConfig?.badgeAnimation) {
@@ -715,18 +628,12 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
             resetOnDefaultValueChange,
         ])
 
-        const getWidthConstraints = () => {
-            const defaultMinWidth = screenSize === "mobile" ? "0px" : "200px"
-            const effectiveMinWidth = minWidth || defaultMinWidth
-            const effectiveMaxWidth = maxWidth || "100%"
-            return {
-                minWidth: effectiveMinWidth,
-                maxWidth: effectiveMaxWidth,
-                width: autoSize ? "auto" : "100%",
-            }
-        }
-
-        const widthConstraints = getWidthConstraints()
+        const widthConstraints = getWidthConstraints(
+            screenSize,
+            minWidth,
+            maxWidth,
+            autoSize
+        )
 
         React.useEffect(() => {
             if (!isPopoverOpen) {
@@ -813,14 +720,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 
         return (
             <>
-                <div className="sr-only">
-                    <div aria-live="polite" aria-atomic="true" role="status">
-                        {politeMessage}
-                    </div>
-                    <div aria-live="assertive" aria-atomic="true" role="alert">
-                        {assertiveMessage}
-                    </div>
-                </div>
+                {liveRegion}
 
                 <Popover
                     open={isPopoverOpen}
