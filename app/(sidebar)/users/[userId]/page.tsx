@@ -19,7 +19,7 @@ export default async function Page({
     const session = await getServerSession(authOptions)
 
     if (!session) {
-        throw new Error("Unauthorized")
+        redirect("/login")
     }
 
     // This one isn't tied to a fetch — it's purely "should the button
