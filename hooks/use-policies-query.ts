@@ -1,5 +1,6 @@
 import { type PolicyDto } from "@/dtos"
 import {
+    keepPreviousData,
     useQuery,
     type UseQueryOptions,
     type UseQueryResult,
@@ -79,7 +80,9 @@ async function fetchPolicies(
 
 export function usePoliciesQuery(
     params: PoliciesQueryParams,
-    options?: Record<string, unknown>
+    options?: Partial<
+        UseQueryOptions<PoliciesQueryResponse, Error, PoliciesQueryResponse, readonly unknown[]>
+    >
 ): UseQueryResult<PoliciesQueryResponse, Error> {
     return useQuery<PoliciesQueryResponse, Error>({
         queryKey: policiesQueryKeys.list(
@@ -91,12 +94,7 @@ export function usePoliciesQuery(
             params.sortDesc
         ),
         queryFn: () => fetchPolicies(params),
-        keepPreviousData: true,
+        placeholderData: keepPreviousData,
         ...options,
-    } as UseQueryOptions<
-        PoliciesQueryResponse,
-        Error,
-        PoliciesQueryResponse,
-        readonly unknown[]
-    >)
+    })
 }

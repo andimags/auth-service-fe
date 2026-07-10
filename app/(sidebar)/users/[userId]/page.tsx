@@ -1,9 +1,7 @@
 import UserInformation from "@/app/(sidebar)/users/[userId]/UserInformation"
-import { RoleDto, UserDto } from "@/dtos"
-import { UserRolesDto } from "@/dtos/UserRoleDto"
 import { authOptions } from "@/lib/next-auth"
 import { checkPermission } from "@/lib/rbac"
-import { isForbiddenError } from "@/services/http/fetcher"
+import { fetchWithAccessResult } from "@/lib/fetch-with-access-result"
 import { getRoles } from "@/services/role.service"
 import { getUserRoles } from "@/services/user-role.service"
 import { getUser } from "@/services/user.service"
@@ -29,9 +27,18 @@ export default async function Page({
     const canManageRoles = checkPermission(session, ["auth:admin:user-role", "auth:assign:user_role", "auth:update:user_role"])
 
     const [userResult, userRolesResult, rolesResult] = await Promise.all([
-        getUserData(userId),
-        getUserRolesData(userId),
-        getRolesData(),
+        fetchWithAccessResult(
+            (auth) => getUser({ userId, ...auth }),
+            null
+        ),
+        fetchWithAccessResult(
+            (auth) => getUserRoles({ userId: Number.parseInt(userId), ...auth }),
+            []
+        ),
+        fetchWithAccessResult(
+            (auth) => getRoles(auth),
+            []
+        ),
     ])
 
     // The BE's response is the only authority here — no isSelf, no
@@ -50,74 +57,4 @@ export default async function Page({
             canManageRoles={canManageRoles}
         />
     )
-}
-
-async function getUserData(
-    userId: string
-): Promise<{ data: UserDto | null; allowed: boolean }> {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.access_token || !session.api_key) {
-        throw new Error("Unauthorized")
-    }
-
-    try {
-        const user = await getUser({
-            userId: userId,
-            accessToken: session.access_token,
-            apiKey: session.api_key,
-        })
-        return { data: user, allowed: true }
-    } catch (error) {
-        if (isForbiddenError(error)) {
-            return { data: null, allowed: false }
-        }
-        throw error
-    }
-}
-
-async function getUserRolesData(
-    userId: string
-): Promise<{ data: UserRolesDto[]; allowed: boolean }> {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.access_token || !session.api_key) {
-        throw new Error("Unauthorized")
-    }
-
-    try {
-        const userRoles = await getUserRoles({
-            userId: Number.parseInt(userId),
-            accessToken: session.access_token,
-            apiKey: session.api_key,
-        })
-        return { data: userRoles, allowed: true }
-    } catch (error) {
-        if (isForbiddenError(error)) {
-            return { data: [], allowed: false }
-        }
-        throw error
-    }
-}
-
-async function getRolesData(): Promise<{ data: RoleDto[]; allowed: boolean }> {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.access_token || !session.api_key) {
-        throw new Error("Unauthorized")
-    }
-
-    try {
-        const roles = await getRoles({
-            accessToken: session.access_token,
-            apiKey: session.api_key,
-        })
-        return { data: roles, allowed: true }
-    } catch (error) {
-        console.log('isForbiddenError', isForbiddenError(error))
-        if (isForbiddenError(error)) {
-            return { data: [], allowed: false }
-        }
-        throw error
-    }
 }

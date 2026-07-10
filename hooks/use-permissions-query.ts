@@ -1,5 +1,6 @@
 import { type PermissionDto } from "@/dtos"
 import {
+    keepPreviousData,
     useQuery,
     type UseQueryOptions,
     type UseQueryResult,
@@ -87,8 +88,6 @@ async function fetchPermissions(
         }
     )
 
-    console.log("response xxx", response)
-
     if (!response.ok) {
         throw new Error("Failed to fetch permissions")
     }
@@ -98,7 +97,9 @@ async function fetchPermissions(
 
 export function usePermissionsQuery(
     params: PermissionsQueryParams,
-    options?: Record<string, unknown>
+    options?: Partial<
+        UseQueryOptions<PermissionsQueryResponse, Error, PermissionsQueryResponse, readonly unknown[]>
+    >
 ): UseQueryResult<PermissionsQueryResponse, Error> {
     return useQuery<PermissionsQueryResponse, Error>({
         queryKey: permissionsQueryKeys.list(
@@ -112,12 +113,7 @@ export function usePermissionsQuery(
             params.isSystem
         ),
         queryFn: () => fetchPermissions(params),
-        keepPreviousData: true,
+        placeholderData: keepPreviousData,
         ...options,
-    } as UseQueryOptions<
-        PermissionsQueryResponse,
-        Error,
-        PermissionsQueryResponse,
-        readonly unknown[]
-    >)
+    })
 }

@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label"
 import { UserDto } from "@/dtos/UserDto"
 import { getBaseUrl } from "@/lib/api"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { toast } from "sonner"
 
 import * as React from "react"
@@ -60,10 +60,6 @@ export function ManageRolesDialog({
     const [selectedValues, setSelectedValues] = useState<string[]>(
         initialSelectedValues
     )
-
-    useEffect(() => {
-        console.log(selectedValues)
-    }, [selectedValues])
 
     const handleClose = () => {
         setIsOpen(false)

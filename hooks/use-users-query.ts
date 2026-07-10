@@ -1,5 +1,6 @@
 import { type UserDto } from "@/dtos"
 import {
+    keepPreviousData,
     useQuery,
     type UseQueryOptions,
     type UseQueryResult,
@@ -79,7 +80,9 @@ async function fetchUsers(
 
 export function useUsersQuery(
     params: UsersQueryParams,
-    options?: Record<string, unknown>
+    options?: Partial<
+        UseQueryOptions<UsersQueryResponse, Error, UsersQueryResponse, readonly unknown[]>
+    >
 ): UseQueryResult<UsersQueryResponse, Error> {
     return useQuery<UsersQueryResponse, Error>({
         queryKey: usersQueryKeys.list(
@@ -91,12 +94,7 @@ export function useUsersQuery(
             params.sortDesc
         ),
         queryFn: () => fetchUsers(params),
-        keepPreviousData: true,
+        placeholderData: keepPreviousData,
         ...options,
-    } as UseQueryOptions<
-        UsersQueryResponse,
-        Error,
-        UsersQueryResponse,
-        readonly unknown[]
-    >)
+    })
 }
