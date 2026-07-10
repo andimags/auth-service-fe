@@ -1,4 +1,5 @@
 import * as React from "react"
+import { ARIA_ANNOUNCEMENT_CLEAR_DELAY_MS } from "@/constants/ui"
 
 /**
  * Manages the polite/assertive ARIA live-region messages used to announce
@@ -16,10 +17,10 @@ export function useAriaAnnouncer(): {
         (message: string, priority: "polite" | "assertive" = "polite") => {
             if (priority === "assertive") {
                 setAssertiveMessage(message)
-                setTimeout(() => setAssertiveMessage(""), 100)
+                setTimeout(() => setAssertiveMessage(""), ARIA_ANNOUNCEMENT_CLEAR_DELAY_MS)
             } else {
                 setPoliteMessage(message)
-                setTimeout(() => setPoliteMessage(""), 100)
+                setTimeout(() => setPoliteMessage(""), ARIA_ANNOUNCEMENT_CLEAR_DELAY_MS)
             }
         },
         []
