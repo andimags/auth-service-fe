@@ -70,7 +70,7 @@ export default function PolicyInformation({
         if (!canViewPolicyPermissions || !canViewPermissions) {
             return (
                 <span className="text-sm text-neutral-400 italic dark:text-neutral-500">
-                    You do not have permission to view this policy's permissions.
+                    You do not have permission to view this policy&apos;s permissions.
                 </span>
             )
         }

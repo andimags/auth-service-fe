@@ -59,10 +59,6 @@ export function PolicyFormDialog() {
         (e: React.ChangeEvent<HTMLInputElement>) =>
             setPayload((prev) => ({ ...prev, [field]: e.target.value }))
 
-    const handleSelectChange =
-        (field: keyof PolicyFormState) => (value: string) =>
-            setPayload((prev) => ({ ...prev, [field]: value }))
-
     const handleClose = () => {
         setPayload(INITIAL_FORM_STATE)
         setIsOpen(false)
