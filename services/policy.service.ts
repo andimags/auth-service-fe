@@ -15,7 +15,6 @@ export async function getPolicies({
     accessToken,
     apiKey,
 }: GetPoliciesParams): Promise<PolicyDto[]> {
-    console.log("yo", `${AUTH_SERVICE_BASE_URL}/api/policies${search}`)
     return http<PolicyDto[]>(`${AUTH_SERVICE_BASE_URL}/api/policies${search}`, {
         method: "GET",
         headers: {
@@ -38,10 +37,6 @@ export async function getPolicy({
     accessToken,
     apiKey,
 }: GetPolicyParams): Promise<PolicyDto> {
-    console.log(
-        "URL on policy service:",
-        `${AUTH_SERVICE_BASE_URL}/api/policies/${policyId}`
-    )
     return http<PolicyDto>(
         `${AUTH_SERVICE_BASE_URL}/api/policies/${policyId}`,
         {

@@ -45,7 +45,6 @@ export async function replacePolicyPermissions({
     accessToken,
     apiKey,
 }: ReplacePolicyPermissionsParams): Promise<PolicyPermissionDto[]> {
-    console.log(payload)
     return http<PolicyPermissionDto[]>(
         `${AUTH_SERVICE_BASE_URL}/api/policy-permission/policy/${policyId.toString()}`,
         {
