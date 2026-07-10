@@ -69,7 +69,7 @@ export default function UserInformation({
         if (!canViewUserRoles || !canViewRoles) {
             return (
                 <span className="text-sm italic text-neutral-400 dark:text-neutral-500">
-                    You do not have permission to view this user's roles.
+                    You do not have permission to view this user&apos;s roles.
                 </span>
             )
         }

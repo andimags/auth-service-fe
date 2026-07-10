@@ -17,7 +17,7 @@ type UserFormState = {
     setOnUpdateSuccess: (callback: () => void) => void
 }
 
-export const useUserFormStore = create<UserFormState>((set, get) => ({
+export const useUserFormStore = create<UserFormState>((set) => ({
     isOpen: false,
 
     setIsOpen: (value: boolean) => {

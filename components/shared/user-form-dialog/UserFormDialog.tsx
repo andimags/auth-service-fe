@@ -38,15 +38,6 @@ export type UserDialogType = {
     user: UserDto | undefined
 }
 
-interface UserFormDialogProps {
-    open: boolean
-    setOpen: (open: boolean) => void
-    mode: "create" | "edit"
-    user?: UserDto
-    /** Called after a successful update so the parent can refresh its data. */
-    onUpdateSuccess?: () => void
-}
-
 interface UserFormState {
     username: string
     email: string
