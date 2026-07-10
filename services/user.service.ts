@@ -5,17 +5,18 @@ import { getAuthServiceBaseUrl } from "@/lib/api"
 const AUTH_SERVICE_BASE_URL = getAuthServiceBaseUrl()
 
 type GetUsersParams = {
-    search: string
+    /** Raw URL query string (e.g. "?page=1&size=10"), forwarded as-is from the incoming request. */
+    queryString: string
     accessToken: string
     apiKey: string
 }
 
 export async function getUsers({
-    search,
+    queryString,
     accessToken,
     apiKey,
 }: GetUsersParams): Promise<UserDto> {
-    return http<UserDto>(`${AUTH_SERVICE_BASE_URL}/api/users/${search}`, {
+    return http<UserDto>(`${AUTH_SERVICE_BASE_URL}/api/users/${queryString}`, {
         method: "GET",
         headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -100,7 +101,7 @@ type DeleteUserParams = {
     apiKey: string
 }
 
-export async function DeleteUser({
+export async function deleteUser({
     userId,
     accessToken,
     apiKey,

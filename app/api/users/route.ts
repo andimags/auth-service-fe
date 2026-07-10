@@ -18,10 +18,10 @@ export async function GET(request: Request) {
             )
         }
 
-        const { search } = new URL(request.url)
+        const { search: queryString } = new URL(request.url)
 
         const response = await getUsers({
-            search,
+            queryString,
             accessToken,
             apiKey,
         })
