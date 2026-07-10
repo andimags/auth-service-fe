@@ -206,9 +206,6 @@ export const authOptions: NextAuthOptions = {
         },
 
         async session({ session, token }) {
-            // console.log("SESSION CALLBACK SESSION:", session)
-            // console.log("SESSION CALLBACK TOKEN:", token)
-
             session.user = token.user
             session.api_key = token.api_key
             session.access_token = token.tokens?.access?.value ?? ""
@@ -221,13 +218,6 @@ export const authOptions: NextAuthOptions = {
 
             return session
         },
-
-        // redirect({ url, baseUrl }) {
-        //     if (url.includes("error=")) return `${baseUrl}/`
-        //     if (url.startsWith("/")) return `${baseUrl}${url}`
-        //     if (new URL(url).origin === baseUrl) return url
-        //     return baseUrl
-        // }
     },
     events: {
         signOut: async ({token}) => {

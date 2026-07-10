@@ -1,3 +1,5 @@
+import { UserLevelType } from "@/constants/enums";
+
 type PermissionInput = string | string[];
 
 export function hasPermission(
@@ -23,8 +25,8 @@ export function hasPermission(
 
 export function isSuperadmin(level?: string): boolean {
     return (
-        level === 'root_superadmin' ||
-        level === 'superadmin'
+        level === UserLevelType.root_superadmin ||
+        level === UserLevelType.superadmin
     );
 }
 

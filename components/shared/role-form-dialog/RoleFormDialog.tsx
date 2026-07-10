@@ -64,7 +64,7 @@ export function RoleFormDialog() {
                 name: role.name,
                 description: role.description ?? "",
                 ref_name: role.ref_name,
-                scope: role.scope as RoleScopeType,
+                scope: role.scope,
                 channel_id:
                     role.channel_id === null || role.channel_id === undefined
                         ? ""

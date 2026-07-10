@@ -1,3 +1,4 @@
+import { RoleScopeType } from "@/constants/enums"
 import { ChannelDto } from "./ChannelDto"
 
 export interface RoleDto {
@@ -6,7 +7,7 @@ export interface RoleDto {
     description?: string | null
     ref_name: string
     channel_id: number | null
-    scope: string
+    scope: RoleScopeType
     created_at: Date
     updated_at: Date
     deleted_at?: Date | null
@@ -18,7 +19,7 @@ export interface CreateRoleDto {
     description?: string | null
     ref_name: string
     channel_id?: number | null
-    scope: string
+    scope: RoleScopeType
 }
 
 export interface UpdateRoleDto {
@@ -26,5 +27,5 @@ export interface UpdateRoleDto {
     description?: string | null
     ref_name?: string
     channel_id?: number | null
-    scope?: string
+    scope?: RoleScopeType
 }
