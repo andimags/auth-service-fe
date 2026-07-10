@@ -30,15 +30,6 @@ export type ChannelDialogType = {
     channel: ChannelDto | undefined
 }
 
-interface ChannelFormDialogProps {
-    open: boolean
-    setOpen: (open: boolean) => void
-    mode: "create" | "edit"
-    channel?: ChannelDto
-    /** Called after a successful update so the parent can refresh its data. */
-    onUpdateSuccess?: () => void
-}
-
 interface ChannelFormState {
     name: string
     description: string

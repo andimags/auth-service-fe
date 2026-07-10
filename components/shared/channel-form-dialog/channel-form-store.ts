@@ -17,7 +17,7 @@ type ChannelFormState = {
     setOnUpdateSuccess: (callback: () => void) => void
 }
 
-export const useChannelFormStore = create<ChannelFormState>((set, get) => ({
+export const useChannelFormStore = create<ChannelFormState>((set) => ({
     isOpen: false,
 
     setIsOpen: (value: boolean) => {
