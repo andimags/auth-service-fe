@@ -56,10 +56,6 @@ export function ManagePermissionsDialog({
         setIsOpen(false)
     }
 
-    useEffect(() => {
-        console.log(selectedValues)
-    }, [selectedValues])
-
     const handleSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault()
         setIsLoading(true)

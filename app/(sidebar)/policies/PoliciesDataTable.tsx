@@ -334,7 +334,6 @@ export function PoliciesDataTable() {
             enableRowSelection
             defaultPageSize={10}
             getRowId={(row) => row.id.toString()}
-            onRowClick={(row) => console.log("Clicked:", row.id)}
             toolbarChildren={
                 <Can requiredPermission={["auth:add:policy", "auth:admin:policy"]}>
                     <AddPolicyButton

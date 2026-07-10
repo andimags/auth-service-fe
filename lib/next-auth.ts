@@ -31,7 +31,6 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
 
     // If a refresh is already in flight for this same refresh token, reuse it
     if (refreshPromise && refreshLockToken === currentRefreshToken) {
-        console.log("Refresh already in progress, waiting...")
         return refreshPromise
     }
 
@@ -186,14 +185,6 @@ export const authOptions: NextAuthOptions = {
                     return newRefreshAccessToken
                 }
 
-                console.log(`[${timeNow()}] Refresh result:`)
-                console.log(`  OLD: ...${token.tokens?.access?.value?.slice(-10) ?? "unknown"}`)
-                console.log(
-                    `  NEW: ...${newRefreshAccessToken.tokens?.access?.value?.slice(-10) ?? "unknown"}`
-                )
-                console.log(
-                    `  SAME TOKEN? ${token.tokens?.access?.value === newRefreshAccessToken.tokens?.access?.value}`
-                )
                 return newRefreshAccessToken
             } catch (error) {
                 console.warn(

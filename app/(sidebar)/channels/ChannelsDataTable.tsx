@@ -319,7 +319,6 @@ export function ChannelsDataTable() {
             enableRowSelection
             defaultPageSize={10}
             getRowId={(row) => row.id.toString()}
-            onRowClick={(row) => console.log("Clicked:", row.id)}
             toolbarChildren={
                 <Can requiredPermission={["auth:add:channel", "auth:admin:channel"]}>
                     <AddChannelButton
