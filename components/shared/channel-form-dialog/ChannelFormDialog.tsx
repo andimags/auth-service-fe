@@ -15,10 +15,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ChannelDto } from "@/dtos/ChannelDto"
+import { useEntityFormMutation } from "@/hooks/use-entity-form-mutation"
 import { getBaseUrl } from "@/lib/api"
-import { useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
-import { toast } from "sonner"
 import { useChannelFormStore } from "./channel-form-store"
 
 // ---------------------------------------------------------------------------
@@ -83,8 +82,20 @@ export function ChannelFormDialog() {
         }
     }, [isOpen, mode, channel])
 
-    const [isLoading, setIsLoading] = useState(false)
-    const queryClient = useQueryClient()
+    const handleClose = () => {
+        setPayload(INITIAL_FORM_STATE)
+        setIsOpen(false)
+    }
+
+    const mutation = useEntityFormMutation<ChannelFormState>({
+        entityName: "Channel",
+        queryKey: "channels",
+        mode,
+        createUrl: `${BASE_URL}/api/channels`,
+        updateUrl: `${BASE_URL}/api/channels/${channel?.id}`,
+        onSuccess: handleClose,
+        onUpdateSuccess,
+    })
 
     // Generic field updater — avoids a separate handler per field.
     const handleChange =
@@ -92,76 +103,12 @@ export function ChannelFormDialog() {
         (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
             setPayload((prev) => ({ ...prev, [field]: e.target.value }))
 
-    const handleClose = () => {
-        setPayload(INITIAL_FORM_STATE)
-        setIsOpen(false)
-    }
-
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-        setIsLoading(true)
-
-        try {
-            if (mode === "create") {
-                await createChannel()
-            } else {
-                await updateChannel()
-            }
-        } finally {
-            setIsLoading(false)
-        }
+        mutation.mutate(payload)
     }
 
-    const createChannel = async () => {
-        try {
-            const response = await fetch(`${BASE_URL}/api/channels`, {
-                method: "POST",
-                body: JSON.stringify(payload),
-                headers: { "Content-Type": "application/json" },
-            })
-
-            if (response.ok) {
-                handleClose()
-                toast.success("Channel has been created")
-                queryClient.invalidateQueries({ queryKey: ["channels"] })
-            } else {
-                const error = await response.json()
-                console.warn(error.message || "Failed to create channel")
-                toast.warning(error.message || "Failed to create channel")
-            }
-        } catch (error) {
-            console.warn(error)
-            toast.error("Network error. Please try again.")
-        }
-    }
-
-    const updateChannel = async () => {
-        try {
-            const response = await fetch(
-                `${BASE_URL}/api/channels/${channel?.id}`,
-                {
-                    method: "PUT",
-                    body: JSON.stringify(payload),
-                    headers: { "Content-Type": "application/json" },
-                }
-            )
-
-            if (response.ok) {
-                handleClose()
-                toast.success("Channel has been updated")
-                queryClient.invalidateQueries({ queryKey: ["channels"] })
-                onUpdateSuccess?.()
-            } else {
-                const error = await response.json()
-                console.warn(error.message || "Failed to update channel")
-                toast.warning(error.message || "Failed to update channel")
-            }
-        } catch (error) {
-            console.warn(error)
-            toast.error("Network error. Please try again.")
-        }
-    }
-
+    const isLoading = mutation.isPending
     const isCreate = mode === "create"
 
     return (

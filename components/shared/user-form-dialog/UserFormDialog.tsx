@@ -23,10 +23,9 @@ import {
 } from "@/components/ui/select"
 import { UserLevelType, UserStatusType } from "@/constants/enums"
 import { UserDto } from "@/dtos/UserDto"
+import { useEntityFormMutation } from "@/hooks/use-entity-form-mutation"
 import { getBaseUrl } from "@/lib/api"
-import { useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
-import { toast } from "sonner"
 import { useUserFormStore } from "./user-form-store"
 
 // ---------------------------------------------------------------------------
@@ -102,8 +101,22 @@ export function UserFormDialog() {
         }
     }, [isOpen, mode, user])
 
-    const [isLoading, setIsLoading] = useState(false)
-    const queryClient = useQueryClient()
+    const handleClose = () => {
+        setPayload(INITIAL_FORM_STATE)
+        setIsOpen(false)
+    }
+
+    const mutation = useEntityFormMutation<
+        UserFormState | Omit<UserFormState, "password">
+    >({
+        entityName: "User",
+        queryKey: "users",
+        mode,
+        createUrl: `${BASE_URL}/api/users`,
+        updateUrl: `${BASE_URL}/api/users/${user?.id}`,
+        onSuccess: handleClose,
+        onUpdateSuccess,
+    })
 
     // Generic field updater — avoids a separate handler per field.
     const handleChange =
@@ -115,76 +128,19 @@ export function UserFormDialog() {
         (field: keyof UserFormState) => (value: string) =>
             setPayload((prev) => ({ ...prev, [field]: value }))
 
-    const handleClose = () => {
-        setPayload(INITIAL_FORM_STATE)
-        setIsOpen(false)
-    }
-
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-        setIsLoading(true)
 
-        try {
-            if (mode === "create") {
-                await createUser()
-            } else {
-                await updateUser()
-            }
-        } finally {
-            setIsLoading(false)
+        if (mode === "create") {
+            mutation.mutate(payload)
+        } else {
+            // Exclude password from update payloads.
+            const { password: _password, ...updatePayload } = payload
+            mutation.mutate(updatePayload)
         }
     }
 
-    const createUser = async () => {
-        try {
-            const response = await fetch(`${BASE_URL}/api/users`, {
-                method: "POST",
-                body: JSON.stringify(payload),
-                headers: { "Content-Type": "application/json" },
-            })
-
-            if (response.ok) {
-                handleClose()
-                toast.success("User has been created")
-                queryClient.invalidateQueries({ queryKey: ["users"] })
-            } else {
-                const error = await response.json()
-                console.warn(error.message || "Failed to create user")
-                toast.warning(error.message || "Failed to create user")
-            }
-        } catch (error) {
-            console.warn(error)
-            toast.error("Network error. Please try again.")
-        }
-    }
-
-    const updateUser = async () => {
-        // Exclude password from update payloads.
-        const { password: _password, ...updatePayload } = payload
-
-        try {
-            const response = await fetch(`${BASE_URL}/api/users/${user?.id}`, {
-                method: "PUT",
-                body: JSON.stringify(updatePayload),
-                headers: { "Content-Type": "application/json" },
-            })
-
-            if (response.ok) {
-                handleClose()
-                toast.success("User has been updated")
-                queryClient.invalidateQueries({ queryKey: ["users"] })
-                onUpdateSuccess?.()
-            } else {
-                const error = await response.json()
-                console.warn(error.message || "Failed to update user")
-                toast.warning(error.message || "Failed to update user")
-            }
-        } catch (error) {
-            console.warn(error)
-            toast.error("Network error. Please try again.")
-        }
-    }
-
+    const isLoading = mutation.isPending
     const isCreate = mode === "create"
 
     return (

@@ -22,10 +22,9 @@ import {
 } from "@/components/ui/select"
 import { PermissionAccessLevelType } from "@/constants/enums"
 import { CreatePermissionDto, UpdatePermissionDto } from "@/dtos/PermissionDto"
+import { useEntityFormMutation } from "@/hooks/use-entity-form-mutation"
 import { getBaseUrl } from "@/lib/api"
-import { useQueryClient } from "@tanstack/react-query"
 import { type SyntheticEvent, useEffect, useState } from "react"
-import { toast } from "sonner"
 import { usePermissionFormStore } from "./permission-form-store"
 
 interface PermissionFormState {
@@ -51,8 +50,6 @@ const BASE_URL = getBaseUrl()
 export function PermissionFormDialog() {
     const [payload, setPayload] =
         useState<PermissionFormState>(INITIAL_FORM_STATE)
-    const [isLoading, setIsLoading] = useState(false)
-    const queryClient = useQueryClient()
 
     const { isOpen, setIsOpen, mode, permission, onUpdateSuccess } =
         usePermissionFormStore()
@@ -92,23 +89,22 @@ export function PermissionFormDialog() {
         setIsOpen(false)
     }
 
-    const handleSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
+    const mutation = useEntityFormMutation<
+        CreatePermissionDto | UpdatePermissionDto
+    >({
+        entityName: "Permission",
+        queryKey: "permissions",
+        mode,
+        createUrl: `${BASE_URL}/api/permissions`,
+        updateUrl: `${BASE_URL}/api/permissions/${permission?.id}`,
+        onSuccess: handleClose,
+        onUpdateSuccess,
+    })
+
+    const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault()
-        setIsLoading(true)
 
-        try {
-            if (mode === "create") {
-                await createPermission()
-            } else {
-                await updatePermission()
-            }
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const createPermission = async () => {
-        const payloadBody: CreatePermissionDto = {
+        const payloadBody: CreatePermissionDto | UpdatePermissionDto = {
             name: payload.name,
             description: payload.description || null,
             ref_name: payload.ref_name,
@@ -117,64 +113,10 @@ export function PermissionFormDialog() {
             access_level: payload.access_level,
         }
 
-        try {
-            const response = await fetch(`${BASE_URL}/api/permissions`, {
-                method: "POST",
-                body: JSON.stringify(payloadBody),
-                headers: { "Content-Type": "application/json" },
-            })
-
-            if (response.ok) {
-                handleClose()
-                toast.success("Permission has been created")
-                queryClient.invalidateQueries({ queryKey: ["permissions"] })
-            } else {
-                const error = await response.json()
-                console.warn(error.message || "Failed to create permission")
-                toast.warning(error.message || "Failed to create permission")
-            }
-        } catch (error) {
-            console.warn(error)
-            toast.error("Network error. Please try again.")
-        }
+        mutation.mutate(payloadBody)
     }
 
-    const updatePermission = async () => {
-        const payloadBody: UpdatePermissionDto = {
-            name: payload.name,
-            description: payload.description || null,
-            ref_name: payload.ref_name,
-            module: payload.module,
-            scope: payload.scope,
-            access_level: payload.access_level,
-        }
-
-        try {
-            const response = await fetch(
-                `${BASE_URL}/api/permissions/${permission?.id}`,
-                {
-                    method: "PUT",
-                    body: JSON.stringify(payloadBody),
-                    headers: { "Content-Type": "application/json" },
-                }
-            )
-
-            if (response.ok) {
-                handleClose()
-                toast.success("Permission has been updated")
-                queryClient.invalidateQueries({ queryKey: ["permissions"] })
-                onUpdateSuccess?.()
-            } else {
-                const error = await response.json()
-                console.warn(error.message || "Failed to update permission")
-                toast.warning(error.message || "Failed to update permission")
-            }
-        } catch (error) {
-            console.warn(error)
-            toast.error("Network error. Please try again.")
-        }
-    }
-
+    const isLoading = mutation.isPending
     const isCreate = mode === "create"
     const submitButtonText = isCreate
         ? "Creating permission..."

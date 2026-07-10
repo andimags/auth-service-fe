@@ -3,6 +3,7 @@
 import { Can } from "@/components/shared/Can"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { NAVIGATE_AWAY_DELAY_MS, REFRESH_DELAY_MS } from "@/constants/ui"
 import { PolicyDto, RoleDto, RolePolicyDto } from "@/dtos"
 import { useDeleteRole } from "@/hooks/use-delete-role"
 import useRoleFormDialog from "@/hooks/use-role-form-dialog"
@@ -41,14 +42,14 @@ export default function RoleInformation({
 
     const { deleteRole } = useDeleteRole({
         onSuccess: () => {
-            setTimeout(() => router.push("/roles"), 1500)
+            setTimeout(() => router.push("/roles"), NAVIGATE_AWAY_DELAY_MS)
         },
     })
 
     const handleEditRole = () => {
         roleFormDialog.open.edit(role, () => {
             roleFormDialog.close()
-            setTimeout(() => router.refresh(), 1000)
+            setTimeout(() => router.refresh(), REFRESH_DELAY_MS)
         })
     }
 

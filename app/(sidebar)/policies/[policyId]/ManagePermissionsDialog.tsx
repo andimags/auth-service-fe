@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { Field, FieldGroup } from "@/components/ui/field"
 import { Label } from "@/components/ui/label"
+import { REFRESH_DELAY_MS } from "@/constants/ui"
 import { PolicyDto } from "@/dtos"
 import { getBaseUrl } from "@/lib/api"
 import { useRouter } from "next/navigation"
@@ -78,7 +79,7 @@ export function ManagePermissionsDialog({
             if (response.ok) {
                 handleClose()
                 toast.success("Policy permissions have been updated")
-                setTimeout(() => router.refresh(), 1000)
+                setTimeout(() => router.refresh(), REFRESH_DELAY_MS)
             } else {
                 const error = await response.json()
                 console.warn(error.message || "Failed to update policy's permissions")

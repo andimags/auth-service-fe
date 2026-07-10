@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { Field, FieldGroup } from "@/components/ui/field"
 import { Label } from "@/components/ui/label"
+import { REFRESH_DELAY_MS } from "@/constants/ui"
 import { RoleDto } from "@/dtos/RoleDto"
 import { getBaseUrl } from "@/lib/api"
 import { useRouter } from "next/navigation"
@@ -72,7 +73,7 @@ export function ManagePoliciesDialog({
             if (response.ok) {
                 toast.success("Role policies have been updated")
                 handleClose()
-                setTimeout(() => router.refresh(), 1000)
+                setTimeout(() => router.refresh(), REFRESH_DELAY_MS)
             } else {
                 const error = await response.json()
                 console.warn(error.message || "Failed to update role policies")

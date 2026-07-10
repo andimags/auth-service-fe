@@ -2,6 +2,7 @@
 
 import { Can } from "@/components/shared/Can"
 import { Button } from "@/components/ui/button"
+import { NAVIGATE_AWAY_DELAY_MS, REFRESH_DELAY_MS } from "@/constants/ui"
 import { ChannelDto } from "@/dtos"
 import useChannelFormDialog from "@/hooks/use-channel-form-dialog"
 import { useDeleteChannel } from "@/hooks/use-delete-channel"
@@ -23,14 +24,14 @@ export default function ChannelInformation({
     const router = useRouter()
     const { deleteChannel } = useDeleteChannel({
         onSuccess: () => {
-            setTimeout(() => router.push("/channels"), 1500)
+            setTimeout(() => router.push("/channels"), NAVIGATE_AWAY_DELAY_MS)
         },
     })
 
     const handleEditChannel = () => {
         channelFormDialog.open.edit(channel, () => {
             channelFormDialog.close()
-            setTimeout(() => router.refresh(), 1000)
+            setTimeout(() => router.refresh(), REFRESH_DELAY_MS)
         })
     }
 
