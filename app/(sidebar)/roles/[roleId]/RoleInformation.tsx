@@ -68,7 +68,7 @@ export default function RoleInformation({
         if (!canViewRolePolicies || !canViewPolicies) {
             return (
                 <span className="text-sm text-neutral-400 italic dark:text-neutral-500">
-                    You do not have permission to view this role's policies.
+                    You do not have permission to view this role&apos;s policies.
                 </span>
             )
         }
