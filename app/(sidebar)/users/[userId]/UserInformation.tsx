@@ -3,6 +3,7 @@
 import { Can } from "@/components/shared/Can"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { NAVIGATE_AWAY_DELAY_MS, REFRESH_DELAY_MS } from "@/constants/ui"
 import { RoleDto, UserDto, UserRolesDto } from "@/dtos"
 import { useDeleteUser } from "@/hooks/use-delete-user"
 import useUserFormDialog from "@/hooks/use-user-form-dialog"
@@ -42,14 +43,14 @@ export default function UserInformation({
 
     const { deleteUser } = useDeleteUser({
         onSuccess: () => {
-            setTimeout(() => router.push("/users"), 1500)
+            setTimeout(() => router.push("/users"), NAVIGATE_AWAY_DELAY_MS)
         },
     })
 
     const handleEditUser = () => {
         userFormDialog.open.edit(user, () => {
             userFormDialog.close()
-            setTimeout(() => router.refresh(), 1000)
+            setTimeout(() => router.refresh(), REFRESH_DELAY_MS)
         })
     }
 
@@ -68,7 +69,7 @@ export default function UserInformation({
         if (!canViewUserRoles || !canViewRoles) {
             return (
                 <span className="text-sm italic text-neutral-400 dark:text-neutral-500">
-                    You do not have permission to view this user's roles.
+                    You do not have permission to view this user&apos;s roles.
                 </span>
             )
         }

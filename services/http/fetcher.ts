@@ -1,5 +1,10 @@
 import { ApiError } from "@/lib/api-error"
 
+interface ApiErrorBody {
+    message?: string
+    errors?: unknown
+}
+
 export default async function http<T>(
     url: string,
     options?: RequestInit
@@ -7,7 +12,7 @@ export default async function http<T>(
     const res = await fetch(url, options)
     const text = await res.text()
 
-    let body: any
+    let body: unknown
     try {
         body = text ? JSON.parse(text) : undefined
     } catch {
@@ -15,10 +20,11 @@ export default async function http<T>(
     }
 
     if (!res.ok) {
+        const errorBody = body as ApiErrorBody | undefined
         throw new ApiError(
-            body?.message ?? "Something went wrong",
+            errorBody?.message ?? "Something went wrong",
             res.status,
-            body?.errors,
+            errorBody?.errors,
         )
     }
 

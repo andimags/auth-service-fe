@@ -1,10 +1,7 @@
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute"
-import { PermissionDto } from "@/dtos/PermissionDto"
-import { PolicyDto } from "@/dtos/PolicyDto"
-import { PolicyPermissionDto } from "@/dtos/PolicyPermissionDto"
 import { authOptions } from "@/lib/next-auth"
 import { checkPermission } from "@/lib/rbac"
-import { isForbiddenError } from "@/services/http/fetcher"
+import { fetchWithAccessResult } from "@/lib/fetch-with-access-result"
 import { getPermissions } from "@/services/permission.service"
 import { getPolicyPermissions } from "@/services/policy-permission.service"
 import { getPolicy } from "@/services/policy.service"
@@ -33,9 +30,18 @@ export default async function Page({
     ])
 
     const [policyResult, policyPermissionsResult, permissionsResult] = await Promise.all([
-        getPolicyData(policyId),
-        getPolicyPermissionsData(policyId),
-        getPermissionsData(),
+        fetchWithAccessResult(
+            (auth) => getPolicy({ policyId, ...auth }),
+            null
+        ),
+        fetchWithAccessResult(
+            (auth) => getPolicyPermissions({ policyId: Number.parseInt(policyId, 10), ...auth }),
+            []
+        ),
+        fetchWithAccessResult(
+            (auth) => getPermissions(auth),
+            []
+        ),
     ])
 
     if (!policyResult.allowed || !policyResult.data) {
@@ -54,79 +60,4 @@ export default async function Page({
             />
         </ProtectedRoute>
     )
-}
-
-async function getPolicyData(
-    policyId: string
-): Promise<{ data: PolicyDto | null; allowed: boolean }> {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.access_token || !session.api_key) {
-        throw new Error("Unauthorized")
-    }
-
-    try {
-        const policy = await getPolicy({
-            policyId,
-            accessToken: session.access_token,
-            apiKey: session.api_key,
-        })
-
-        return { data: policy, allowed: true }
-    } catch (error) {
-        if (isForbiddenError(error)) {
-            return { data: null, allowed: false }
-        }
-        throw error
-    }
-}
-
-async function getPolicyPermissionsData(
-    policyId: string
-): Promise<{ data: PolicyPermissionDto[]; allowed: boolean }> {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.access_token || !session.api_key) {
-        throw new Error("Unauthorized")
-    }
-
-    try {
-        const policyPermissions = await getPolicyPermissions({
-            policyId: Number.parseInt(policyId, 10),
-            accessToken: session.access_token,
-            apiKey: session.api_key,
-        })
-
-        return { data: policyPermissions, allowed: true }
-    } catch (error) {
-        if (isForbiddenError(error)) {
-            return { data: [], allowed: false }
-        }
-        throw error
-    }
-}
-
-async function getPermissionsData(): Promise<{
-    data: PermissionDto[]
-    allowed: boolean
-}> {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.access_token || !session.api_key) {
-        throw new Error("Unauthorized")
-    }
-
-    try {
-        const permissions = await getPermissions({
-            accessToken: session.access_token,
-            apiKey: session.api_key,
-        })
-
-        return { data: permissions, allowed: true }
-    } catch (error) {
-        if (isForbiddenError(error)) {
-            return { data: [], allowed: false }
-        }
-        throw error
-    }
 }

@@ -5,7 +5,6 @@ export class ApiError extends Error {
 
     constructor(message: string, statusCode: number = 500, details?: unknown) {
         super(message);
-        // this.name = 'Backend Error';
         this.statusCode = statusCode;
         this.details = details;
         this.isOperational = true;

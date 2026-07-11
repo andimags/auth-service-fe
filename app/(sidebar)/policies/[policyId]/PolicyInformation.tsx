@@ -3,6 +3,7 @@
 import { Can } from "@/components/shared/Can"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { NAVIGATE_AWAY_DELAY_MS, REFRESH_DELAY_MS } from "@/constants/ui"
 import { PermissionDto, PolicyDto, PolicyPermissionDto } from "@/dtos"
 import { useDeletePolicy } from "@/hooks/use-delete-policy"
 import usePolicyFormDialog from "@/hooks/use-policy-form-dialog"
@@ -41,14 +42,14 @@ export default function PolicyInformation({
 
     const { deletePolicy } = useDeletePolicy({
         onSuccess: () => {
-            setTimeout(() => router.push("/policies"), 1500)
+            setTimeout(() => router.push("/policies"), NAVIGATE_AWAY_DELAY_MS)
         },
     })
 
     const handleEditPolicy = () => {
         policyFormDialog.open.edit(policy, () => {
             policyFormDialog.close()
-            setTimeout(() => router.refresh(), 1000)
+            setTimeout(() => router.refresh(), REFRESH_DELAY_MS)
         })
     }
 
@@ -69,7 +70,7 @@ export default function PolicyInformation({
         if (!canViewPolicyPermissions || !canViewPermissions) {
             return (
                 <span className="text-sm text-neutral-400 italic dark:text-neutral-500">
-                    You do not have permission to view this policy's permissions.
+                    You do not have permission to view this policy&apos;s permissions.
                 </span>
             )
         }

@@ -1,5 +1,6 @@
 import { type RoleDto } from "@/dtos"
 import {
+    keepPreviousData,
     useQuery,
     type UseQueryOptions,
     type UseQueryResult,
@@ -79,7 +80,9 @@ async function fetchRoles(
 
 export function useRolesQuery(
     params: RolesQueryParams,
-    options?: Record<string, unknown>
+    options?: Partial<
+        UseQueryOptions<RolesQueryResponse, Error, RolesQueryResponse, readonly unknown[]>
+    >
 ): UseQueryResult<RolesQueryResponse, Error> {
     return useQuery<RolesQueryResponse, Error>({
         queryKey: rolesQueryKeys.list(
@@ -91,12 +94,7 @@ export function useRolesQuery(
             params.sortDesc
         ),
         queryFn: () => fetchRoles(params),
-        keepPreviousData: true,
+        placeholderData: keepPreviousData,
         ...options,
-    } as UseQueryOptions<
-        RolesQueryResponse,
-        Error,
-        RolesQueryResponse,
-        readonly unknown[]
-    >)
+    })
 }

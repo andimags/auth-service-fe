@@ -2,7 +2,7 @@ import { UpdateUserDto } from "@/dtos/UserDto"
 import { getBaseUrl } from "@/lib/api"
 import { ApiError } from "@/lib/api-error"
 import { authOptions } from "@/lib/next-auth"
-import { DeleteUser, updateUser } from "@/services/user.service"
+import { deleteUser, updateUser } from "@/services/user.service"
 import { getServerSession } from "next-auth/next"
 import { NextResponse } from "next/server"
 
@@ -125,7 +125,7 @@ export async function DELETE(
             )
         }
 
-        const response = await DeleteUser({
+        const response = await deleteUser({
             userId,
             accessToken,
             apiKey,

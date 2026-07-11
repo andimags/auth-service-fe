@@ -23,10 +23,9 @@ import {
 } from "@/components/ui/select"
 import { RoleScopeType } from "@/constants/enums"
 import { CreateRoleDto, UpdateRoleDto } from "@/dtos/RoleDto"
+import { useEntityFormMutation } from "@/hooks/use-entity-form-mutation"
 import { getBaseUrl } from "@/lib/api"
-import { useQueryClient } from "@tanstack/react-query"
 import { type SyntheticEvent, useEffect, useState } from "react"
-import { toast } from "sonner"
 import { useRoleFormStore } from "./role-form-store"
 
 interface RoleFormState {
@@ -49,8 +48,6 @@ const BASE_URL = getBaseUrl()
 
 export function RoleFormDialog() {
     const [payload, setPayload] = useState<RoleFormState>(INITIAL_FORM_STATE)
-    const [isLoading, setIsLoading] = useState(false)
-    const queryClient = useQueryClient()
 
     const { isOpen, setIsOpen, mode, role, onUpdateSuccess } =
         useRoleFormStore()
@@ -64,7 +61,7 @@ export function RoleFormDialog() {
                 name: role.name,
                 description: role.description ?? "",
                 ref_name: role.ref_name,
-                scope: role.scope as RoleScopeType,
+                scope: role.scope,
                 channel_id:
                     role.channel_id === null || role.channel_id === undefined
                         ? ""
@@ -89,23 +86,20 @@ export function RoleFormDialog() {
         setIsOpen(false)
     }
 
-    const handleSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
+    const mutation = useEntityFormMutation<CreateRoleDto | UpdateRoleDto>({
+        entityName: "Role",
+        queryKey: "roles",
+        mode,
+        createUrl: `${BASE_URL}/api/roles`,
+        updateUrl: `${BASE_URL}/api/roles/${role?.id}`,
+        onSuccess: handleClose,
+        onUpdateSuccess,
+    })
+
+    const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault()
-        setIsLoading(true)
 
-        try {
-            if (mode === "create") {
-                await createRole()
-            } else {
-                await updateRole()
-            }
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const createRole = async () => {
-        const payloadBody: CreateRoleDto = {
+        const payloadBody: CreateRoleDto | UpdateRoleDto = {
             name: payload.name,
             description: payload.description || null,
             ref_name: payload.ref_name,
@@ -115,62 +109,10 @@ export function RoleFormDialog() {
                 : null,
         }
 
-        try {
-            const response = await fetch(`${BASE_URL}/api/roles`, {
-                method: "POST",
-                body: JSON.stringify(payloadBody),
-                headers: { "Content-Type": "application/json" },
-            })
-
-            if (response.ok) {
-                handleClose()
-                toast.success("Role has been created")
-                queryClient.invalidateQueries({ queryKey: ["roles"] })
-            } else {
-                const error = await response.json()
-                console.warn(error.message || "Failed to create role")
-                toast.warning(error.message || "Failed to create role")
-            }
-        } catch (error) {
-            console.warn(error)
-            toast.error("Network error. Please try again.")
-        }
+        mutation.mutate(payloadBody)
     }
 
-    const updateRole = async () => {
-        const payloadBody: UpdateRoleDto = {
-            name: payload.name,
-            description: payload.description || null,
-            ref_name: payload.ref_name,
-            scope: payload.scope || RoleScopeType.global,
-            channel_id: payload.channel_id
-                ? Number.parseInt(payload.channel_id, 10)
-                : null,
-        }
-
-        try {
-            const response = await fetch(`${BASE_URL}/api/roles/${role?.id}`, {
-                method: "PUT",
-                body: JSON.stringify(payloadBody),
-                headers: { "Content-Type": "application/json" },
-            })
-
-            if (response.ok) {
-                handleClose()
-                toast.success("Role has been updated")
-                queryClient.invalidateQueries({ queryKey: ["roles"] })
-                onUpdateSuccess?.()
-            } else {
-                const error = await response.json()
-                console.warn(error.message || "Failed to update role")
-                toast.warning(error.message || "Failed to update role")
-            }
-        } catch (error) {
-            console.warn(error)
-            toast.error("Network error. Please try again.")
-        }
-    }
-
+    const isLoading = mutation.isPending
     const isCreate = mode === "create"
     const submitButtonText = isCreate ? "Creating role..." : "Updating role..."
 

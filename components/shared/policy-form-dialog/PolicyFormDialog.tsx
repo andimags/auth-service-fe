@@ -14,10 +14,9 @@ import { Field, FieldGroup } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { CreatePolicyDto, UpdatePolicyDto } from "@/dtos/PolicyDto"
+import { useEntityFormMutation } from "@/hooks/use-entity-form-mutation"
 import { getBaseUrl } from "@/lib/api"
-import { useQueryClient } from "@tanstack/react-query"
 import { type SyntheticEvent, useEffect, useState } from "react"
-import { toast } from "sonner"
 import { usePolicyFormStore } from "./policy-form-store"
 
 interface PolicyFormState {
@@ -36,8 +35,6 @@ const BASE_URL = getBaseUrl()
 
 export function PolicyFormDialog() {
     const [payload, setPayload] = useState<PolicyFormState>(INITIAL_FORM_STATE)
-    const [isLoading, setIsLoading] = useState(false)
-    const queryClient = useQueryClient()
 
     const { isOpen, setIsOpen, mode, policy, onUpdateSuccess } =
         usePolicyFormStore()
@@ -62,89 +59,34 @@ export function PolicyFormDialog() {
         (e: React.ChangeEvent<HTMLInputElement>) =>
             setPayload((prev) => ({ ...prev, [field]: e.target.value }))
 
-    const handleSelectChange =
-        (field: keyof PolicyFormState) => (value: string) =>
-            setPayload((prev) => ({ ...prev, [field]: value }))
-
     const handleClose = () => {
         setPayload(INITIAL_FORM_STATE)
         setIsOpen(false)
     }
 
-    const handleSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
+    const mutation = useEntityFormMutation<CreatePolicyDto | UpdatePolicyDto>({
+        entityName: "Policy",
+        queryKey: "policies",
+        mode,
+        createUrl: `${BASE_URL}/api/policies`,
+        updateUrl: `${BASE_URL}/api/policies/${policy?.id}`,
+        onSuccess: handleClose,
+        onUpdateSuccess,
+    })
+
+    const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault()
-        setIsLoading(true)
 
-        try {
-            if (mode === "create") {
-                await createPolicy()
-            } else {
-                await updatePolicy()
-            }
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const createPolicy = async () => {
-        const payloadBody: CreatePolicyDto = {
+        const payloadBody: CreatePolicyDto | UpdatePolicyDto = {
             name: payload.name,
             description: payload.description || null,
             ref_name: payload.ref_name,
         }
 
-        try {
-            const response = await fetch(`${BASE_URL}/api/policies`, {
-                method: "POST",
-                body: JSON.stringify(payloadBody),
-                headers: { "Content-Type": "application/json" },
-            })
-
-            if (response.ok) {
-                handleClose()
-                toast.success("Policy has been created")
-                queryClient.invalidateQueries({ queryKey: ["policies"] })
-            } else {
-                const error = await response.json()
-                console.warn(error.message || "Failed to create policy")
-                toast.warning(error.message || "Failed to create policy")
-            }
-        } catch (error) {
-            console.warn(error)
-            toast.error("Network error. Please try again.")
-        }
+        mutation.mutate(payloadBody)
     }
 
-    const updatePolicy = async () => {
-        const payloadBody: UpdatePolicyDto = {
-            name: payload.name,
-            description: payload.description || null,
-            ref_name: payload.ref_name,
-        }
-
-        try {
-            const response = await fetch(`${BASE_URL}/api/policies/${policy?.id}`, {
-                method: "PUT",
-                body: JSON.stringify(payloadBody),
-                headers: { "Content-Type": "application/json" },
-            })
-
-            if (response.ok) {
-                handleClose()
-                toast.success("Policy has been updated")
-                queryClient.invalidateQueries({ queryKey: ["policies"] })
-                onUpdateSuccess?.()
-            } else {
-                const error = await response.json()
-                console.warn(error.message || "Failed to update policy")
-                toast.warning(error.message || "Failed to update policy")
-            }
-        } catch (error) {
-            console.warn(error)
-            toast.error("Network error. Please try again.")
-        }
-    }
-
+    const isLoading = mutation.isPending
     const isCreate = mode === "create"
     const submitButtonText = isCreate
         ? "Creating policy..."

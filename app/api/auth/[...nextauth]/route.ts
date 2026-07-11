@@ -1,9 +1,14 @@
 import { authOptions } from "@/lib/next-auth"
 import NextAuth from "next-auth/next"
+import { NextRequest } from "next/server"
 
 const internalHandler = NextAuth(authOptions)
 
-const handler = async (req: any, context: any) => {
+interface RouteContext {
+    params: Promise<{ nextauth: string[] }>
+}
+
+const handler = async (req: NextRequest, context: RouteContext) => {
     const params = await context.params
     return await internalHandler(req, { params })
 }

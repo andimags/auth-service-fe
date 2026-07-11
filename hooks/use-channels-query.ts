@@ -1,5 +1,6 @@
 import { type ChannelDto } from "@/dtos"
 import {
+    keepPreviousData,
     useQuery,
     type UseQueryOptions,
     type UseQueryResult,
@@ -67,7 +68,9 @@ async function fetchChannels(
 
 export function useChannelsQuery(
     params: ChannelsQueryParams,
-    options?: Record<string, unknown>
+    options?: Partial<
+        UseQueryOptions<ChannelsQueryResponse, Error, ChannelsQueryResponse, readonly unknown[]>
+    >
 ): UseQueryResult<ChannelsQueryResponse, Error> {
     return useQuery<ChannelsQueryResponse, Error>({
         queryKey: channelsQueryKeys.list(
@@ -78,12 +81,7 @@ export function useChannelsQuery(
             params.sortDesc
         ),
         queryFn: () => fetchChannels(params),
-        keepPreviousData: true,
+        placeholderData: keepPreviousData,
         ...options,
-    } as UseQueryOptions<
-        ChannelsQueryResponse,
-        Error,
-        ChannelsQueryResponse,
-        readonly unknown[]
-    >)
+    })
 }
