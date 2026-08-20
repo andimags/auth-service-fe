@@ -46,7 +46,8 @@ export async function refreshAccessToken(
 }
 
 export async function destroyToken(
-    refreshToken: string
+    refreshToken: string,
+    apiKey: string
 ): Promise<DestroyTokenResponseDto> {
     return http<DestroyTokenResponseDto>(
         `${AUTH_SERVICE_BASE_URL}/api/auth/destroy-token`,
@@ -54,6 +55,7 @@ export async function destroyToken(
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "x-api-key": apiKey,
             },
             body: JSON.stringify({ refresh_token: refreshToken }),
         }
