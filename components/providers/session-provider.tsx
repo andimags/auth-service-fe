@@ -1,5 +1,6 @@
 "use client"
 
+import { isUnrecoverableAuthError } from "@/lib/auth/errors"
 import {
     SessionProvider as NextAuthSessionProvider,
     signOut,
@@ -11,12 +12,10 @@ function SessionWatcher() {
     const { data: session } = useSession()
 
     useEffect(() => {
-        if (
-            session?.error !== "RefreshAccessTokenError" &&
-            session?.error !== "RefreshTokenError"
-        )
-            return
-        signOut()
+        // Sign out on any unrecoverable auth error the refresh flow can emit; the
+        // set of codes is defined alongside the refresh logic so the two can't
+        // drift out of sync.
+        if (isUnrecoverableAuthError(session?.error)) signOut()
     }, [session?.error])
 
     return null

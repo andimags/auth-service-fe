@@ -1,289 +1,179 @@
-# auth-service-fe
+# Frontend
 
-Admin console for **auth-service** — a multi-tenant (channel-scoped) RBAC system. This
-app lets operators manage users, roles, policies, permissions, and channels, and
-authenticates against the [auth-service-be](../auth-service-be) API.
+Admin dashboard for the Auth Service. Built with Next.js (App Router), React, TypeScript, and Tailwind CSS.
 
 ## Overview
 
-Built on Next.js 16 (App Router) + React 19. All backend communication is intended to
-be proxied through this app's own `/api/*` route handlers (see
-[API Integration](#api-integration) for where the current code deviates from that
-rule). Authentication is handled by NextAuth with a credentials provider backed by the
-auth service's JWT login endpoint; RBAC gating happens both at the route level (server
-components redirecting unauthorized users) and at the component level (conditionally
-rendering actions a user isn't permitted to perform).
-
-## Features
-
-- Email + password + API key login (`/login`), with silent access-token refresh and
-  automatic sign-out on refresh failure
-- Entity management for **Users**, **Roles**, **Policies**, **Permissions**, and
-  **Channels** — paginated/searchable/sortable list views plus detail pages
-- Relationship management: assign Roles to Users, Policies to Roles, and Permissions to
-  Policies via dedicated dialogs on each entity's detail page
-- Permission-aware UI: sidebar links, action buttons (Add/Edit/Delete), and entire
-  routes are hidden or redirect to `/403` based on the signed-in user's permissions
-  (superadmin/root_superadmin bypass all checks)
-- Dark/light theme (defaults to dark)
+The frontend is a web dashboard for administering the Auth Service: signing in, and managing users, roles, policies, permissions, and channels. It authenticates through NextAuth, fetches data with TanStack Query, and renders permission-aware UI so users only see actions they are allowed to perform.
 
 ## Tech Stack
 
-| Layer | Choice |
-|---|---|
-| Framework | Next.js 16 (App Router), React 19, TypeScript |
-| Auth | NextAuth 4 (JWT session strategy, Credentials provider) |
-| Server state | TanStack Query v5 |
-| Client UI state | Zustand v5 (one store per entity dialog) |
-| Tables | TanStack Table v8 |
-| UI components | shadcn/ui (Radix UI primitives, `radix-mira` style), Hugeicons |
-| Styling | Tailwind CSS v4 (CSS-based config, no `tailwind.config.*`) |
-| HTTP client | Native `fetch` only — no axios/ky, per [AGENTS.md](./AGENTS.md) |
-| Toasts | sonner |
+- Next.js 16 (App Router) & React 19
+- TypeScript
+- Tailwind CSS 4
+- shadcn/ui, Radix UI, Base UI (components)
+- NextAuth (authentication & sessions)
+- TanStack Query (server state)
+- TanStack Table (data tables)
+- Zustand (client state)
+- dnd-kit (drag & drop)
+- Recharts (charts)
+- Sonner (toasts)
+- ESLint & Prettier
 
 ## Folder Structure
 
 ```
-app/
-  (sidebar)/            Authenticated shell — layout + one folder per entity
-    users/ roles/ policies/ permissions/ channels/
-      page.tsx           List view (client DataTable)
-      [id]/page.tsx       Detail view (server component) + relation-management dialogs
-  login/                 Login page (GuestRoute-gated)
-  403/                   Static "Access Denied" page
-  api/                   Route handlers proxying to the backend (see API Integration)
-components/
-  ui/                     shadcn/Radix primitives (button, dialog, data-table, ...)
-  shared/                 App-specific: Can/ProtectedRoute/GuestRoute (RBAC gates),
-                          one form-dialog + Zustand store per entity
-  providers/              ThemeProvider, SessionProvider, QueryProvider
-constants/                Enums, sidebar nav config
-dtos/                     Request/response type definitions per resource
-hooks/                    use-*-query (TanStack Query), use-*-form-dialog, use-delete-*
-lib/                      rbac.ts, next-auth.ts, api.ts, fetch-with-access-result.ts, ...
-services/                 One file per backend resource + services/http/fetcher.ts
-types/                    NextAuth module augmentation
+auth-service-fe/
+├── app/
+│   ├── (sidebar)/        # Authenticated dashboard routes (users, roles, etc.)
+│   ├── api/              # Route Handlers (incl. NextAuth) 
+│   ├── login/            # Login page
+│   ├── 403/              # Forbidden page
+│   ├── layout.tsx        # Root layout
+│   └── globals.css       # Global styles / Tailwind entry
+├── components/
+│   ├── providers/        # Query, session, and theme providers
+│   ├── shared/           # RBAC guards & entity form dialogs
+│   └── ui/               # shadcn/ui primitives
+├── constants/            # Enums, sidebar data, UI constants
+├── dtos/                 # Data transfer object types
+├── hooks/                # Data-fetching, dialog, and mutation hooks
+├── lib/                  # API helpers, auth, RBAC, utilities
+├── services/             # Backend API calls (per domain)
+│   └── http/             # Fetch wrapper
+├── types/                # Global type declarations
+├── proxy.ts              # NextAuth route-guarding middleware
+└── next.config.ts        # Next.js config (incl. /backend rewrite)
 ```
 
-## Component Architecture
+## Architecture
 
-- **`components/ui/`** — low-level shadcn/Radix primitives, generated via
-  `npx shadcn add`. Treat as vendored; prefer composing over editing directly.
-- **`components/shared/`** — app-specific composites:
-  - `Can.tsx` — client component that conditionally renders children based on a
-    permission check (used inline for Add/Edit/Delete buttons)
-  - `ProtectedRoute.tsx` / `GuestRoute.tsx` — server components that redirect based on
-    session presence and (for `ProtectedRoute`) a required permission
-  - `*-form-dialog/` — one create/edit dialog + Zustand store per entity (user, role,
-    policy, permission, channel), plus `confirm-dialog/` for delete confirmations. All
-    five dialogs are mounted once, globally, in `app/layout.tsx`, and opened
-    imperatively from anywhere via the matching `use-*-form-dialog.ts` hook — this
-    avoids prop-drilling dialog open/close state through the component tree.
-- **Entity pages** — each entity has a client `<Entity>DataTable.tsx` (list, built on
-  `components/ui/data-table.tsx` + TanStack Table) and a server `[id]/page.tsx` +
-  `<Entity>Information.tsx` (detail).
+Short explanations of the main building blocks:
 
-## State Management
+- **App Router** — Routes live under `app/`. Authenticated pages are grouped in `(sidebar)/`; API endpoints in `app/api/`.
+- **Pages** — Each entity (users, roles, policies, permissions, channels) has a list route and a detail route (`[id]`).
+- **Layouts** — A root layout wraps all pages; the `(sidebar)` layout adds the dashboard shell (sidebar + header).
+- **Components** — Reusable UI split into `ui/` (primitives), `shared/` (guards and form dialogs), and feature components.
+- **Services** — One module per domain in `services/`; each calls the backend through the shared `http` fetch wrapper.
+- **Hooks** — Encapsulate queries (`use-*-query`), mutations, and dialog state.
+- **DTOs** — Typed request/response shapes in `dtos/`, shared across services and components.
+- **State management** — TanStack Query for server state; Zustand for local client state.
+- **UI library** — shadcn/ui on top of Radix and Base UI, styled with Tailwind.
+- **Forms & validation** — Entity form dialogs in `components/shared/`, driven by form hooks. Field validation is enforced primarily by the backend; the UI surfaces the returned errors. _TODO: document client-side validation if/when a schema library is adopted._
 
-- **Server state**: TanStack Query (`hooks/use-*-query.ts`), one `QueryClient` per app
-  mount (`components/providers/query-provider.tsx`). Create/update mutations go
-  through the shared [`useEntityFormMutation`](./hooks/use-entity-form-mutation.ts)
-  hook (toast + `invalidateQueries` logic, previously duplicated across all five entity
-  dialogs); delete flows are hand-rolled per entity (`use-delete-*.ts`).
-- **UI-only state**: Zustand, one store per entity dialog (`isOpen`, `mode`, the entity
-  being edited) — never used for server data.
-- **Theme**: `next-themes`, default dark, `enableSystem={false}`.
-- **Session**: NextAuth's `SessionProvider` (`refetchInterval={30}`), plus a
-  `SessionWatcher` that force-signs-out the client if the session carries a refresh
-  error.
+## Project Structure
+
+Purpose of the major folders:
+
+| Folder | Purpose |
+| --- | --- |
+| `app/` | Routes, layouts, and Route Handlers (App Router) |
+| `components/` | UI primitives, RBAC guards, and feature components |
+| `services/` | Typed calls to the backend API |
+| `hooks/` | Query, mutation, and dialog hooks |
+| `dtos/` | Shared request/response types |
+| `lib/` | API base URLs, auth, RBAC helpers, utilities |
+| `constants/` | Enums, sidebar config, UI constants |
 
 ## Authentication Flow
 
-1. `/login` collects email, password, and an API key (`components/login-form.tsx`,
-   plain controlled inputs — no form library) and calls NextAuth's
-   `signIn("credentials", ...)`.
-2. NextAuth's `authorize()` (`lib/next-auth.ts`) calls
-   `services/auth.service.ts`'s `loginWithCredentials`, which hits the backend's
-   `POST /api/auth/generate-token` with the API key in `x-api-key`.
-3. On success, the access token, refresh token, user record, and resolved permissions
-   are packed into the NextAuth JWT session — **never** exposed to the browser outside
-   what `useSession()`/`getServerSession()` return, and never stored in localStorage or
-   a plain cookie.
-4. On each session read, the `jwt` callback checks whether the access token is within
-   30 seconds of expiring; if so, it silently calls the backend's
-   `POST /api/auth/refresh-token`, deduplicated via an in-memory lock keyed by the
-   refresh token so concurrent requests don't trigger duplicate refreshes.
-5. Logout (`signOut()`) triggers NextAuth's `events.signOut`, which calls
-   `POST /api/auth/destroy-token` to revoke the refresh token server-side.
-6. Edge-level route protection lives in **`proxy.ts`** (Next.js 16 renamed
-   `middleware.ts` to `proxy.ts` — this repo uses the new name), using
-   `next-auth/middleware`'s `withAuth`, requiring a valid, error-free token. Page-level
-   protection additionally uses `ProtectedRoute`/`GuestRoute` server components.
+- Login is handled by **NextAuth** (`app/api/auth/[...nextauth]`).
+- Credentials are submitted to the backend, which returns the user, their permissions, and an access/refresh token pair.
+- Tokens and the API key are stored in the NextAuth session/JWT; the access token is refreshed automatically when it expires.
+- `proxy.ts` (Next.js middleware) guards routes — unauthenticated or errored sessions are redirected to `/login`.
+- The session's permission list drives RBAC guards (`Can`, `ProtectedRoute`, `GuestRoute`) so the UI adapts to what the user can access.
 
-## Authorization / RBAC
+## API Communication
 
-- `lib/rbac.ts` exports `hasPermission`, `isSuperadmin`, and `checkPermission` — mirrors
-  the backend's permission-check semantics: `root_superadmin`/`superadmin` bypass all
-  checks; everyone else needs at least one (or all, if `requireAll`) of the required
-  permission ref-names in their session's `permissions` array.
-- **Route level**: `ProtectedRoute` (wraps `(sidebar)` pages) redirects to `/login` if
-  unauthenticated, `/403` if a required permission is missing.
-- **Component level**: `Can` conditionally renders Add/Edit/Delete controls inline.
-- **Nav level**: `constants/sidebarData.tsx` declares `requiredPermissions` per sidebar
-  link; links the user can't access are hidden entirely.
-- Permission ref-names follow the backend's `auth:<action>:<resource>` convention
-  (e.g. `auth:view:user`, `auth:admin:role`) — see
-  [auth-service-be's RBAC docs](../auth-service-be/README.md#authorization--rbac) for
-  how these are resolved server-side.
+- Domain modules in `services/` call the backend using a shared fetch wrapper (`services/http/fetcher.ts`).
+- The backend base URL comes from the server-only `AUTH_SERVICE_BASE_URL` variable (resolved via `lib/api.ts`).
+- `next.config.ts` also defines a `/backend/:path*` rewrite to `AUTH_SERVICE_BASE_URL` for proxying requests.
+- Requests attach the bearer access token and the `x-api-key` header for scope.
 
-## API Integration
-
-**Intended architecture** (per this repo's [AGENTS.md](./AGENTS.md)): client components
-call this app's own `/api/*` route handlers; those handlers alone call the backend, via
-the `/backend/*` rewrite defined in `next.config.ts`; `AUTH_SERVICE_BASE_URL` should
-never be read outside `next.config.ts`.
-
-> [!warning] Known deviations from the stated architecture — not yet fixed
-> - Every `services/*.service.ts` file reads `AUTH_SERVICE_BASE_URL` directly
->   (via `lib/api.ts`'s `getAuthServiceBaseUrl()`) and calls the backend's `/api/*`
->   path directly, bypassing the `/backend/*` rewrite entirely.
-> - The six entity detail pages (`app/(sidebar)/*/[id]/page.tsx`) call
->   `services/*.service.ts` functions directly as server components, bypassing this
->   app's own `/api/*` route handlers for those reads.
-> - Within `app/api/users/[userId]/route.ts`, the `GET` handler actually does follow
->   the stated rewrite pattern (raw `fetch` to `/backend/users/:id`), while `PUT`/
->   `DELETE` in the same file use the service-layer pattern above — the file is
->   internally inconsistent.
->
-> None of this is a client-side secret-exposure risk (`AUTH_SERVICE_BASE_URL` has no
-> `NEXT_PUBLIC_` prefix, so it never reaches the browser either way), but it is a real
-> deviation from the codebase's own documented rule. See `ENGINEERING_AUDIT.md` for the
-> recommendation — this wasn't fixed as part of this pass since routing ~9 call sites
-> through `/api/*` is an architecture change, not a bug fix.
-
-**Endpoint mapping** — `services/*.service.ts` → backend route:
-
-| Service | Backend endpoint(s) |
-|---|---|
-| `auth.service.ts` | `POST /api/auth/{generate-token,refresh-token,destroy-token}` |
-| `user.service.ts` | `GET/POST /api/users`, `GET/PUT/DELETE /api/users/:id` |
-| `role.service.ts` | `GET/POST /api/roles`, `GET/PUT/DELETE /api/roles/:id` |
-| `policy.service.ts` | `GET/POST /api/policies`, `GET/PUT/DELETE /api/policies/:id` |
-| `permission.service.ts` | `GET/POST /api/permissions`, `GET/PUT/DELETE /api/permissions/:id` |
-| `channel.service.ts` | `GET/POST /api/channels`, `GET/PUT/DELETE /api/channels/:id` |
-| `policy-permission.service.ts` | `GET/PUT /api/policy-permission/policy/:policy_id` |
-| `role-policy.service.ts` | `GET/PUT /api/role-policy/role/:role_id` |
-| `user-role.service.ts` | `GET/PUT /api/user-role/user/:user_id` |
-
-For the full backend API contract (parameters, validation, response shapes), see
-[auth-service-be's Swagger docs](../auth-service-be/README.md#api-documentation).
-
-## Routing
-
-App Router, no `src/` directory:
-
-| Route | Purpose |
-|---|---|
-| `/` | Placeholder dashboard (not currently linked from the sidebar nav) |
-| `/login` | Login form |
-| `/403` | Static access-denied page |
-| `/users`, `/users/[userId]` | User list / detail (+ role assignment) |
-| `/roles`, `/roles/[roleId]` | Role list / detail (+ policy assignment) |
-| `/policies`, `/policies/[policyId]` | Policy list / detail (+ permission assignment) |
-| `/permissions`, `/permissions/[permissionId]` | Permission list / detail |
-| `/channels`, `/channels/[channelId]` | Channel list / detail |
+> Note: the codebase's own guideline is that backend access should route exclusively through the `/backend/*` rewrite, but services currently call `AUTH_SERVICE_BASE_URL` directly. See `lib/api.ts` / `ENGINEERING_AUDIT.md` for context.
 
 ## Styling
 
-Tailwind CSS v4 (CSS-based config — no `tailwind.config.*` file; see
-`app/globals.css` for the `@theme inline` token mapping and OKLCH light/dark palette).
-shadcn/ui components configured via `components.json` (`style: "radix-mira"`,
-`baseColor: "neutral"`, icons via `@hugeicons`). Use the `cn()` helper
-(`lib/utils.ts`) for conditional class composition; Prettier's Tailwind plugin
-auto-sorts class names on save/format.
+- **Tailwind CSS 4** — Utility-first styling; configured via PostCSS. Global styles and theme tokens live in `app/globals.css`.
+- **shadcn/ui** — Prebuilt, accessible components (in `components/ui/`) built on Radix/Base UI and customizable in-repo. Configured via `components.json`.
+- **Global styles** — `app/globals.css` imports Tailwind and theme variables, including light/dark theming via `next-themes`.
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` and fill in values:
+| Variable | Description |
+| --- | --- |
+| `NEXT_PUBLIC_BASE_URL` | Public base URL of this frontend app (used to build absolute URLs back to itself) |
+| `NEXTAUTH_SECRET` | NextAuth session encryption secret — generate with `openssl rand -base64 32` |
+| `NEXTAUTH_URL` | Canonical URL NextAuth uses for callbacks (should match where the app is served) |
+| `AUTH_SERVICE_BASE_URL` | Backend base URL. Server-only (no `NEXT_PUBLIC_` prefix) |
+| `NEXT_PUBLIC_AUTH_SERVICE_BASE_URL` | Currently unreferenced; kept for parity — safe to leave unset |
 
-| Variable | Required | Notes |
-|---|---|---|
-| `NEXT_PUBLIC_BASE_URL` | Yes | This app's own base URL (client-exposed) |
-| `NEXT_PUBLIC_AUTH_SERVICE_BASE_URL` | No | Present historically; unreferenced in code today |
-| `NEXTAUTH_SECRET` | Yes | Session JWT encryption key — keep private, generate with `openssl rand -base64 32` |
-| `NEXTAUTH_URL` | Yes | Canonical URL for NextAuth callbacks |
-| `AUTH_SERVICE_BASE_URL` | Yes | Backend base URL — server-only, never sent to the browser |
+See `.env.example` for a template.
+
+## Getting Started
+
+### Prerequisites
+- Node.js
+- A running instance of the backend (`auth-service-be`)
+
+### Installation
+
+```bash
+npm install
+cp .env.example .env   # then fill in the values
+```
+
+### Running Locally (Development)
+
+```bash
+npm run dev            # http://localhost:3000
+```
+
+### Production Build
+
+```bash
+npm run build          # build the app
+npm start              # serve the production build
+```
+
+## Available Scripts
+
+| Script | Description |
+| --- | --- |
+| `npm run dev` | Start the Next.js dev server |
+| `npm run build` | Create a production build |
+| `npm start` | Serve the production build |
+| `npm run lint` | Run ESLint |
+| `npm run format` | Format the project with Prettier |
+| `npm run typecheck` | Type-check with `tsc --noEmit` |
+
+## Coding Guidelines
+
+- **Components:** `PascalCase`; UI primitives live in `components/ui/`, feature/shared components in `components/shared/`.
+- **Hooks:** `camelCase`, `use-` prefixed files (e.g. `use-users-query.ts`).
+- **Services:** one file per domain (`*.service.ts`); no business logic in components.
+- **DTOs:** typed shapes in `dtos/`, imported via the `@/` alias.
+- **File organization:** colocate by responsibility (`services`, `hooks`, `dtos`, `components`).
+- **Imports:** use the `@/*` path alias for internal modules; group external imports before internal ones.
+- Run `npm run lint`, `npm run typecheck`, and `npm run format` before committing.
 
 ## Build & Deployment
 
 ```bash
-npm install
 npm run build
-npm start          # serves the production build
+npm start
 ```
 
-No Dockerfile exists in this repo yet (plain Node deployment only) — see
-`ENGINEERING_AUDIT.md` for this as a Nice-to-Have. Required at deploy time: all five
-env vars above, plus a reachable `auth-service-be` instance.
+Ensure all environment variables are set in the target environment and that `AUTH_SERVICE_BASE_URL` points at a reachable backend. _TODO: document the specific hosting target (e.g. Vercel, Node server, container)._
 
 ## Troubleshooting
 
-| Symptom | Likely cause |
-|---|---|
-| Stuck redirect loop between `/login` and app pages | `NEXTAUTH_SECRET`/`NEXTAUTH_URL` misconfigured, or the backend is unreachable so login never returns tokens |
-| "Base URL is not defined" error | `NEXT_PUBLIC_BASE_URL` not set |
-| "Auth Service Base URL is not defined" error | `AUTH_SERVICE_BASE_URL` not set |
-| Logged in but every page redirects to `/403` | The signed-in user has no roles/policies/permissions assigned on the backend, or the wrong `x-api-key` was used at login (wrong channel scope) |
-| Session silently logs out after ~2 minutes of inactivity mid-session | Expected — access tokens are short-lived (2 min) and refresh silently on activity; if the backend's refresh token has also expired (7 days) or was revoked, `SessionWatcher` force-signs-out |
-
-## Scripts
-
-| Script | Purpose |
-|---|---|
-| `npm run dev` | Start the dev server |
-| `npm run build` | Production build |
-| `npm start` | Serve the production build |
-| `npm run lint` | ESLint |
-| `npm run format` | Prettier (writes) |
-| `npm run typecheck` | `tsc --noEmit` |
-
-## Screenshots
-
-Live capture was attempted against a running dev server + seeded local database, but
-the available browser-automation tooling's screenshot/zoom capture consistently timed
-out in this environment (page loads, console, network, and the DOM/accessibility tree
-all worked fine — only pixel capture failed), and completing the login flow to reach
-authenticated pages would have required passing the real superadmin password as a tool
-call parameter, which isn't something to do even for a local dev credential. Falling
-back to placeholders.
-
-To capture these yourself:
-
-1. Ensure PostgreSQL is running and reachable per `auth-service-be/.env`.
-2. `cd auth-service-be && npm run seed` (skip if already seeded).
-3. `npm run dev` in both `auth-service-be` (port 4000) and this repo (port 3000).
-4. Log in at `http://localhost:3000/login` with the seeded superadmin credentials
-   (`SUPERADMIN_EMAIL`/`SUPERADMIN_PASSWORD` from `auth-service-be/.env`) and API key
-   `global`.
-5. Capture at 1280×800: `/login` (pre-auth), `/`, `/users` + `/users/[id]`, `/roles` +
-   `/roles/[id]`, `/policies` + `/policies/[id]`, `/permissions` +
-   `/permissions/[id]`, `/channels` + `/channels/[id]`, and `/403` (visit as a
-   lower-privileged seeded user, or a route requiring a permission that user lacks).
-6. Save into `public/screenshots/` and reference here, e.g.
-   `![Users list](public/screenshots/users-list.png)`.
-
-| Page | Screenshot |
-|---|---|
-| Login | _pending — see above_ |
-| Dashboard (`/`) | _pending_ |
-| Users list / detail | _pending_ |
-| Roles list / detail | _pending_ |
-| Policies list / detail | _pending_ |
-| Permissions list / detail | _pending_ |
-| Channels list / detail | _pending_ |
-| 403 | _pending_ |
-
----
-
-See [`ENGINEERING_AUDIT.md`](./ENGINEERING_AUDIT.md) for the full architecture/quality
-audit, including the items flagged above.
+| Issue | Likely cause / fix |
+| --- | --- |
+| Redirected to `/login` in a loop | Invalid/expired session or missing API key — check backend availability and credentials |
+| "Base URL is not defined" error | `NEXT_PUBLIC_BASE_URL` is not set |
+| "Auth Service Base URL is not defined" error | `AUTH_SERVICE_BASE_URL` is not set |
+| API calls fail | Backend not running or `AUTH_SERVICE_BASE_URL` points at the wrong host |
+| `403` page shown | The signed-in user lacks the required permission |
+| NextAuth callback errors | `NEXTAUTH_URL` / `NEXTAUTH_SECRET` misconfigured |
